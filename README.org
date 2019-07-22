@@ -1,0 +1,10 @@
+#+TITLE: Emacs Org Dotfiles
+#+AUTHOR: Lucas Vieira
+#+EMAIL: lucasvieira@protonmail.com
+
+These are my dotfiles for my Emacs configuration. It uses an =init.org=
+file which is tangled and bootstrapped, and uses =use-package= to fetch
+all packages needed for my environment.
+
+Sensitive information has been stripped. Use these files at your own
+risk.

@@ -1,0 +1,1047 @@
+#+TITLE:    Alchemist's Emacs Configuration
+#+AUTHOR:   Lucas Vieira
+#+BABEL:    :cache yes
+#+PROPERTY: header-args :tangle yes
+#+STARTUP:  overview
+
+* First-time initialization
+
+If you are using this configuration for the first time, you
+should put the following code on =.emacs.d/init.el=. It is
+responsible for bootstrapping the entire thing. Notice that
+it is not tangled along with the rest!
+
+#+begin_src emacs-lisp :tangle no
+  (require 'org)
+
+  (find-file (concat user-emacs-directory "init.org"))
+  (org-babel-tangle)
+  (load-file (concat user-emacs-directory "init.el"))
+  (byte-compile-file (concat user-emacs-directory "init.el"))
+#+end_src
+
+* Preparation
+** Bootstrapping
+
+This init file is heavily inspired by [[https://github.com/freetonik/emacs-dotfiles][freetonik]]'s.
+
+Tangle and compile this file on save.
+
+#+begin_src emacs-lisp
+  ;;;; -*- lexical-binding: t -*-
+
+  ;;;; Initialization
+
+  (defun tangle-init ()
+    "If the current buffer is 'init.org' the code-blocks are
+    tangled, and the tangled file is compiled."
+    (when (equal (buffer-file-name)
+		 (expand-file-name (concat user-emacs-directory "init.org")))
+      ;; Avoid running hooks when tangling.
+      (let ((prog-mode-hook nil))
+	(org-babel-tangle)
+	(byte-compile-file (concat user-emacs-directory "init.el")))))
+
+  (add-hook 'after-save-hook 'tangle-init)
+#+end_src
+
+Remove /functions might not be defined at runtime/ warnings.
+
+#+begin_src emacs-lisp
+  ;;(eval-when-compile
+  ;;  (setq use-package-expand-minimally byte-compile-current-file))
+#+end_src
+
+** Packaging
+
+Prepare packages.
+
+#+begin_src emacs-lisp
+;;;; Packaging
+
+(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+			 ("marmalade" . "https://marmalade-repo.org/packages/")
+			 ;;("melpa-stable" . "https://stable.melpa.org/packages/")
+			 ("melpa" . "https://melpa.org/packages/")
+			 ("org" . "https://orgmode.org/elpa/")))
+
+(package-initialize)
+#+end_src
+
+Install use-package.
+
+#+begin_src emacs-lisp
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
+
+  (eval-when-compile (require 'use-package))
+
+  (setq use-package-always-ensure t)
+#+end_src
+
+** Custom
+
+The custom file is a thing I never plan to touch.
+Let's move it out of the way.
+
+#+begin_src emacs-lisp
+  (setq custom-file (expand-file-name (concat user-emacs-directory "sensitive/custom.el")))
+  (load custom-file)
+#+end_src
+
+* Appearance
+
+** Fonts
+
+There are many fonts I usually choose. I just uncomment as needed.
+
+#+begin_src emacs-lisp
+  ;;(defconst my-default-font "-*-fixed-medium-r-normal-*-15-*-*-*-*-*-*-*")
+  ;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
+  ;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
+  ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
+  ;;(defconst my-default-font "Monoid-9")
+  ;;(defconst my-default-font "Fixed-10")
+  (defconst my-default-font "Dina-10")
+  ;;(defconst my-default-font "Iosevka-9")
+  ;;(defconst my-default-font "Terminus-10")
+  ;;(defconst my-default-font "Hack-10")
+#+end_src
+
+** Visual
+
+We create a frame a-list which is applied, so that we have customizations
+set at standalone or daemonized Emacs.
+
+#+begin_src emacs-lisp
+  (defconst my-frame-alist
+    `((font                 . ,my-default-font)
+      (scroll-bar           . -1)
+      (height               . 60)
+      (width                . 95)
+      (alpha                . 95)
+      (vertical-scroll-bars . nil)))
+  (setq default-frame-alist my-frame-alist)
+#+end_src
+
+I use kaolin-bubblegum as my default theme.
+
+#+begin_src emacs-lisp
+  (use-package kaolin-themes
+    :config (load-theme 'kaolin-bubblegum t))
+#+end_src
+
+There are also some general rules I set up manually.
+
+#+begin_src emacs-lisp
+  (setq inhibit-startup-screen        t
+	inhibit-splash-screen         t
+	show-paren-mode               1
+	show-paren-delay              0
+	scroll-bar-mode               -1
+	browser-url-browse-function   'browse-url-firefox
+	linum-format                  "%5d"
+	tab-width                     4
+	;; Mouse
+	transentient-mark-mode        t
+	mouse-wheel-follow-mouse      t
+	scroll-step                   1
+	scroll-conservatively         101
+	mouse-wheel-scroll-amount     '(1)
+	mouse-wheel-progressive-speed nil)
+  (menu-bar-mode -99)
+  (tool-bar-mode -1)
+#+end_src
+
+Unfortunately, =linum-mode= doesn't work properly with some
+buffers, so we add it to the hook for programming modes.
+
+#+begin_src lisp
+  (add-hook 'prog-mode-hook 'linum-mode)
+#+end_src
+
+** Keybindings
+
+Increasing/decreasing text is useful on presentations.
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-+") #'text-scale-increase)
+  (global-set-key (kbd "C--") #'text-scale-decrease)
+#+end_src
+
+We also set some bindings for mouse scrolling. They work with the
+mouse variables which we've already set before.
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "<mouse-4>")   'scroll-down-line)
+  (global-set-key (kbd "<mouse-5>")   'scroll-up-line)
+  (global-set-key (kbd "<C-mouse-4>") 'scroll-down-command)
+  (global-set-key (kbd "<C-mouse-5>") 'scroll-up-command)
+
+  (xterm-mouse-mode)
+#+end_src
+
+** Autocompletion
+
+#+begin_src emacs-lisp
+  (setq tab-always-indent 'complete)
+  (add-to-list 'completion-styles 'initials t)
+#+end_src
+
+** Modeline
+
+I use =telephone-line= for that.
+
+#+begin_src emacs-lisp
+  (use-package telephone-line
+    :config (progn
+	      (setq telephone-line-primary-left-separator    'telephone-line-cubed-left
+		    telephone-line-secondary-left-separator  'telephone-line-cubed-hollow-left
+		    telephone-line-primary-right-separator   'telephone-line-cubed-right
+		    telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right
+		    telephone-line-height                    24
+		    telephone-line-evil-use-short-tag        t))
+    (telephone-line-mode 1))
+#+end_src
+
+* Language Configurations
+
+Now we create configurations for programming languages.
+
+This should give us nice guide rulers for indentation.
+#+TODO: Add indent-guide.
+
+This should give us nice, highlighted numbers across all programming
+languages.
+
+#+begin_src emacs-lisp
+  (use-package highlight-numbers
+    :config (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+#+end_src
+
+Let's also install and/or configure globally-needed packages, such as
+Flycheck and Semantic.
+
+#+begin_src emacs-lisp
+  (use-package flycheck)
+  (require 'semantic)
+
+  (global-semanticdb-minor-mode        1)
+  (global-semantic-idle-scheduler-mode 1)
+  (global-semantic-stickyfunc-mode     0)
+
+  (semantic-mode 1)
+#+end_src
+
+** Org
+
+Org mode already comes with Emacs, but it is important that we make
+sure we have the latest version installed.
+
+#+begin_src emacs-lisp
+  (use-package org :ensure org-plus-contrib)
+#+end_src
+
+*** Agenda
+
+Prepare Portuguese-BR translations for some things, plus some custom
+commands.
+
+#+begin_src emacs-lisp
+  (require 'org-agenda)
+  (setq org-agenda-include-diary t
+	calendar-week-start-day 0
+	calendar-day-name-array ["Domingo" "Segunda" "Terça" "Quarta"
+				 "Quinta" "Sexta" "Sábado"]
+	calendar-month-name-array ["Janeiro" "Fevereiro" "Março" "Abril"
+				   "Maio" "Junho" "Julho" "Agosto"
+				   "Setembro" "Outubro" "Novembro" "Dezembro"])
+
+
+  (add-to-list 'org-agenda-custom-commands
+	       '("Y" "Agenda anual de aniversários e feriados" agenda "Visão Anual"
+		 ((org-agenda-span 365)
+		  (org-agenda-filter-by-category 'Aniversário)
+		  (org-agenda-time-grid nil))))
+  (add-to-list 'org-agenda-custom-commands
+	       '("1" "Agenda mensal" agenda "Visão Mensal"
+		 ((org-agenda-span 31)
+		  (org-agenda-time-grid nil))))
+  (add-to-list 'org-agenda-custom-commands
+	       '("7" "Agenda dos próximos sete dias" agenda "Visão de Sete Dias"
+		 ((org-agenda-span 7)
+		  (org-agenda-time-grid nil))))
+#+end_src
+
+There are also some Brazillian holidays we can use.
+
+#+begin_src emacs-lisp
+  (load (expand-file-name (concat user-emacs-directory "elisp/brazil-holidays.el")))
+  (setq calendar-holidays holiday-brazil-all)
+#+end_src
+
+As for my agenda itself, it is managed through the variable org-agenda-files, which
+is defined in a sensitive file.
+
+#+begin_src emacs-lisp
+  (load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
+#+end_src
+
+*** Appearance
+
+Let's make sure our Org mode indents and wraps around the 80th column
+by using Visual Line Mode. Oh, and we also enable cute bullets.
+
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook #'toggle-word-wrap)
+  (add-hook 'org-mode-hook #'org-indent-mode)
+  (add-hook 'org-mode-hook #'turn-on-visual-line-mode)
+
+  (use-package org-bullets
+    :config (add-hook 'org-mode-hook #'org-bullets-mode))
+#+end_src
+
+Let's enforce the 80-column rule with an indicator.
+
+#+begin_src emacs-lisp
+  (use-package fill-column-indicator
+    :config (progn
+	      (add-hook 'org-mode-hook
+			(lambda ()
+			  (setq fci-rule-width 1)
+			  (setq fci-rule-color "darkblue")))
+	      (add-hook 'org-mode-hook 'turn-on-auto-fill)))
+#+end_src
+
+Other nice features are: hiding emphasis markers, prevent editing
+source blocks indentation, make tab acts natively, fontify, ensure
+org-babel checks before evaluation, support shift select.
+
+#+begin_src emacs-lisp
+  (setq org-hide-emphasis-markers        t
+	org-edit-src-content-indentation 0
+	org-src-tab-acts-natively        t
+	org-src-fontify-natively         t
+	org-src-preserve-indentation     t
+	org-confirm-babel-evaluate       t
+	org-support-shift-select         'always)
+#+end_src
+
+*** Alert
+
+Org-alert uses libnotify to create notifications for the calendar.
+
+#+begin_src emacs-lisp
+  (use-package org-alert
+    :config (progn
+	      (setq alert-default-style          'libnotify
+		    org-alert-notification-title "*org-mode*"
+		    org-alert-interval           21600)
+	      (org-alert-enable)))
+#+end_src
+
+*** Calfw
+
+Calfw is my default calendar tool. I bind it to F6 key.
+
+#+begin_src emacs-lisp
+  (use-package calfw)
+  (use-package calfw-org
+    :requires calfw
+    :config (progn
+	      (setq cfw:org-overwrite-default-keybinding t)
+	      (global-set-key (kbd "<f6>")
+			      (lambda ()
+				(interactive)
+				(cfw:open-org-calendar)))))
+#+end_src
+
+*** Journal
+
+Org journal is useful for keeping up notes on a journal.
+My journal files are kept in a sensitive file.
+
+#+begin_src emacs-lisp
+  (load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
+  (use-package org-journal
+    :init
+    (defun org-journal-load-files ()
+      (interactive)
+      (when (not org-journal-loaded)
+	(setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
+	(add-to-list 'org-agenda-files org-journal-dir)
+	(setq org-journal-loaded t)))
+    :config (setq org-journal-loaded nil))
+
+#+end_src
+
+Anniversaries can be seen by including my diary.
+
+#+begin_src emacs-lisp
+  (setq org-agenda-include-diary t)
+#+end_src
+
+*** Trello
+
+Trello support. Not much needs to be said.
+
+#+begin_src emacs-lisp
+  (use-package org-trello)
+#+end_src
+
+*** Templates
+
+Unfortunately, newer versions of Org do not include template
+snippets. Let's fix this.
+
+#+begin_src emacs-lisp
+  (define-key org-mode-map (kbd "C-c C-x t") #'org-insert-structure-template)
+
+  (setq org-structure-template-alist
+	'(("n" . "notes")
+	  ("a" . "export ascii")
+	  ("c" . "center")
+	  ("C" . "comment")
+	  ("e" . "example")
+	  ("E" . "export")
+	  ("h" . "export html")
+	  ("l" . "export latex")
+	  ("q" . "quote")
+	  ("s" . "src")
+	  ("v" . "verse")))
+#+end_src
+
+*** Exports
+
+Let's begin by setting up a few things for Babel.
+
+#+begin_src emacs-lisp
+  (setq org-export-allow-bind-keywords t)
+
+  (use-package ob-go)
+  (org-babel-do-load-languages 'org-babel-load-languages
+			       '((lisp  . t)
+				 (go    . t)
+				 (shell . t)
+				 (dot   . t)
+				 (lisp  . t)))
+#+end_src
+
+**** HTML
+
+Configure Htmlize to preferred defaults.
+
+#+begin_src emacs-lisp
+  (use-package htmlize
+    :config (setq htmlize-output-type 'css))
+#+end_src
+
+**** LaTeX
+
+#+begin_src emacs-lisp
+  (require 'ox-latex)
+  (unless (boundp 'org-latex-classes)
+    (setq org-latex-classes nil))
+  (add-to-list 'org-latex-classes
+	       '("abntex2"
+		 "\\documentclass{abntex2}
+		  [NO-DEFAULT-PACKAGES]
+		  [EXTRA]"
+		 ("\\section{%s}" . "\\section*{%s}")
+		 ("\\subsection{%s}" . "\\subsection*{%s}")
+		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+		 ("\\maketitle" . "\\imprimircapa"))
+	       '("ufvjm"
+		 "\\documentclass[article,12pt,openany,oneside,a4paper,chapter=TITLE,hyphen,english,brazil,sumario=tradicional]{abntex2}
+		  [NO-DEFAULT-PACKAGES]
+		  [EXTRA]"
+		 ("\\section{%s}" . "\\section*{%s}")
+		 ("\\subsection{%s}" . "\\subsection*{%s}")
+		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+		 ("\\maketitle" . "\\imprimircapa")))
+  (setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdf %f"))
+#+end_src
+
+**** Reveal.js
+
+Export presentations to Reveal.js.
+
+#+begin_src emacs-lisp
+  (use-package ox-reveal
+    :config (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js@3.8.0/js/reveal.min.js"
+		  org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/"
+	org-reveal-mathjax t))
+#+end_src
+
+*** Org Capture and Org Protocol
+
+Org Protocol configures Emacs to deal properly with the Org Capture
+extension for browsers.
+
+Org protocol file location is stored in a sensitive file.
+
+#+begin_src emacs-lisp
+  (require 'org-protocol)
+  (require 'org-capture)
+  (defun sqbrackets->rndbrackets (string)
+    (concat (mapcar #'(lambda (c)
+	  (cond ((equal c ?\[) ?\()
+		((equal c ?\]) ?\))
+		(t c)))
+      string)))
+
+  (load (expand-file-name (concat user-emacs-directory "sensitive/org-protocol.el")))
+
+  (setq org-capture-templates
+    `(("p"
+       "Protocol" entry (file+headline ,org-capture-file "Inbox")
+       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
+		"#+begin_quote\n"
+		"%i\n"
+		"#+end_quote\n\n"
+		"Acesso em: %U\n\n"))
+      ("L" "Protocol Link" entry (file+headline ,org-capture-file "Inbox")
+       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
+		"Acesso em: %U\n\n"))))
+#+end_src
+
+Here is an example of file, which you should store at, say,
+=~/.local/share/applications/org-protocol.desktop=:
+
+#+BEGIN_EXAMPLE
+[Desktop Entry]
+Name=org-protocol
+Exec=emacsclient -c "%u"
+Type=Application
+Terminal=false
+Categories=System;
+MimeType=x-scheme-handler/org-protocol;
+#+END_EXAMPLE
+
+*** Org-ref
+
+Org-ref is the best tool for managing bibliography.
+Bibliography location is stored on a sensitive file.
+
+#+begin_src emacs-lisp
+  (use-package org-ref
+    :config (progn
+              (load (expand-file-name (concat user-emacs-directory "sensitive/org-ref.el"))))
+              (require 'org-ref-pdf)
+              (require 'org-ref-bibtex)
+              (require 'org-ref-url-utils))
+#+end_src
+
+** Assembly
+
+Make sure =nasm-mode= is used for all Assembly files.
+
+#+begin_src emacs-lisp
+  (use-package nasm-mode
+    :config (add-to-list 'auto-mode-alist '("\\.asm\\'" . nasm-mode)))
+#+end_src
+
+** C/C++
+
+Configure C/C++ support for my taste. Defaults include indentation
+of width 4 with spaces, K&R style.
+
+#+begin_src emacs-lisp
+  (require 'cc-mode)
+
+  (defun my-c-mode-hook ()
+    (setq c-basic-offset   4
+	  c-default-style  "k&r"
+	  indent-tabs-mode nil)
+    (c-set-offset 'substatement-open 0))
+
+  (add-hook 'c++-mode-hook #'my-c-mode-hook)
+  (add-hook 'c-mode-hook   #'my-c-mode-hook)
+#+end_src
+
+Setup CMake IDE. Notice that we need to have rtags installed
+on the system.
+
+#+begin_src emacs-lisp
+  (use-package rtags)
+  (use-package cmake-ide
+    :config (cmake-ide-setup))
+#+end_src
+
+Setup Company C Headers for autocompletion.
+
+#+begin_src emacs-lisp
+  (use-package company)
+  (use-package company-c-headers
+    :requires company
+    :init (add-to-list 'company-backends 'company-c-headers))
+#+end_src
+
+To help with autocompletion, we use semantic, previously configured.
+
+** Forth
+
+Use forth-mode and configure keybindings for evaluating code blocks.
+
+#+begin_src emacs-lisp
+  (use-package forth-mode
+    :config (progn
+	      (define-key forth-mode-map (kbd "C-x C-e") #'forth-eval-last-expression)
+	      (define-key forth-mode-map (kbd "C-c C-c") #'forth-eval-region)))
+
+#+end_src
+
+** Go
+
+We use go-mode and godoctor to help with autocompletions and indentations.
+We also set indentation to tabs of width 4.
+
+We also rely on flycheck for Go.
+
+#+begin_src emacs-lisp
+  (use-package go-mode
+    :config (progn
+	      (use-package godoctor)
+	      (add-hook 'go-mode-hook #'company-mode)
+	      (add-hook 'go-mode-hook  #'flycheck-mode)
+	      (add-hook 'go-mode-hook (lambda ()
+					(setq indent-tabs-mode 1
+					      tab-width        4)))
+	      (add-to-list 'company-backends 'company-go)))
+#+end_src
+
+** Haskell
+
+Just make sure we are using intero-mode.
+
+#+begin_src emacs-lisp
+  (use-package intero
+    :config (add-hook 'haskell-mode-hook 'intero-mode))
+#+end_src
+
+** Lisp
+
+There are many dialects of Lisp! I mostly work with Common Lisp,
+Scheme, Elisp and Racket.
+
+*** Common Lisp
+Here, we use Roswell to manage our SLIME installation.
+
+#+begin_src emacs-lisp
+  (load (expand-file-name "~/.roswell/helper.el"))
+#+end_src
+
+Let's also make sure that we have our function which starts SLIME
+on a specific directory. This is useful for using Qlot.
+
+#+begin_src emacs-lisp
+(defun slime-qlot-exec (directory)
+  (interactive (list (read-directory-name "Project directory: ")))
+  (slime-start :program "qlot"
+               :program-args '("exec" "ros" "-S" "." "run")
+               :directory directory
+               :name 'qlot
+               :env (list (concat "PATH=" (mapconcat 'identity exec-path ":")))))
+#+end_src
+
+*** Scheme
+
+We just make sure Geiser is installed, Plus, set its default implementation
+to Chez Scheme.
+
+#+begin_src emacs-lisp
+  (use-package geiser
+    :config (setq geiser-default-implementation 'chez))
+#+end_src
+
+*** Appearance
+
+Use prettify-symbols-mode on all Lisps.
+
+#+begin_src emacs-lisp
+  (add-hook 'lisp-mode-hook       #'prettify-symbols-mode)
+  (add-hook 'emacs-lisp-mode-hook #'prettify-symbols-mode)
+  (add-hook 'scheme-mode-hook     #'prettify-symbols-mode)
+#+end_src
+
+Use rainbow-delimiters to colorize parens.
+
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :config (progn
+              (add-hook 'lisp-mode-hook       #'rainbow-delimiters-mode)
+              (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
+              (add-hook 'scheme-mode-hook     #'rainbow-delimiters-mode)))
+#+end_src
+
+** PureScript
+
+We use the PureScript IDE. Make sure PureScript is properly installed.
+
+#+begin_src emacs-lisp
+  (use-package purescript-mode)
+  (use-package psc-ide
+    :requires purescript-mode
+    :config (progn
+	      (add-hook 'purescript-mode-hook #'psc-ide-mode)
+	      (add-hook 'purescript-mode-hook #'company-mode)
+	      (add-hook 'purescript-mode-hook #'flycheck-mode)
+	      (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
+	      (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation)
+	      (setq psc-ide-use-npm-bin t)))
+
+#+end_src
+
+** Rust
+
+Make some adjustments to support Rust language. We use rust-mode and
+racer via company for autocompletions.
+
+#+begin_src emacs-lisp
+  (use-package rust-mode
+    :config (progn
+	      (add-hook 'rust-mode-hook 'cargo-minor-mode)
+	      (add-hook 'rust-mode-hook
+			(lambda ()
+			  (local-set-key (kbd "C-c <tab>") #'rust-format-buffer)))
+	      (use-package racer
+		:config (progn
+			  (add-hook 'rust-mode-hook #'racer-mode)
+			  (add-hook 'racer-mode-hook #'eldoc-mode)
+			  (add-hook 'racer-mode-hook #'company-mode)))
+	      (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
+	      (setq company-tooltip-align-annotations t)))
+#+end_src
+
+** TeX
+
+Use latex-preview-pane for comfortable editing.
+
+#+begin_src emacs-lisp
+  (use-package latex-preview-pane
+    :config
+    (when (display-graphic-p)
+      (latex-preview-pane-enable)))
+#+end_src
+
+To compile the current file, we resort to Rubber, an external tool.
+
+#+begin_src emacs-lisp
+  (defun rubber-compile-file ()
+    (interactive)
+    (shell-command
+     (concat "rubber -d " buffer-file-name))
+    (message "Finished LaTeX compilation."))
+#+end_src
+
+It is also interesting to have pretty symbols for our LaTeX files.
+
+#+begin_src emacs-lisp
+  (use-package latex-pretty-symbols)
+#+end_src
+
+** Web
+
+We use web-mode for anything web-related. It also uses js2-mode for
+easier parens/javascript editing.
+
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :init (progn
+	    (add-to-list 'auto-mode-alist '("\\.phtml\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.tpl\\.php\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.[agj]sp\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.as[cp]x\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
+	    (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
+    :config (progn
+	      (add-hook 'web-mode-hook
+			(lambda ()
+			  (setq web-mode-enable-auto-closing t)
+			  (setq web-mode-markup-indent-offset 2)
+			  (setq web-mode-css-indent-offset 4)
+			  (setq web-mode-code-indent-offset 4)
+			  (setq web-mode-indent-style 2)
+			  (setq web-mode-ac-sources-alist
+				'(("css"  . (ac-source-css-property))
+				  ("html" . (ac-source-words-in-buffer
+					     ac-source-abbrev))))))
+	      (use-package js2-mode
+		:config (progn
+			  (add-hook 'js2-mode-hook 'flow-minor-enable-automatically)
+			  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))))))
+#+end_src
+
+* Miscellaneous
+
+Now we'll configure some useful tools.
+
+** Company
+
+#+begin_src emacs-lisp
+  (use-package company
+    :config (add-hook 'after-init-hook 'global-company-mode))
+#+end_src
+
+** Ansi-Term
+
+Bind the F7 key to opening a new buffer with ZSH.
+
+#+begin_src emacs-lisp
+  (global-set-key [f7]
+		  (lambda ()
+		    (interactive)
+		    (split-window-sensibly)
+		    (other-window 1)
+		    (ansi-term "/bin/zsh")))
+#+end_src
+
+** Projectile
+
+I like to use Projectile for managing my projects.
+
+#+begin_src emacs-lisp
+  (use-package projectile)
+#+end_src
+
+** Neotree
+
+I also like Neotree on the F8 key.
+
+#+begin_src emacs-lisp
+  (use-package all-the-icons)
+  (use-package neotree
+    :requires all-the-icons
+    :config (progn
+	      (global-set-key [f8] 'neotree-toggle)
+	      (setq neo-theme (if (or (display-graphic-p)
+				      (daemonp))
+				  'icons
+				'arrow)
+		    projectile-switch-project-action 'neotree-project-action)))
+#+end_src
+
+** PDF Tools
+
+#+begin_src emacs-lisp
+  (use-package pdf-tools
+    :config (progn (pdf-tools-install)
+		   (add-hook 'pdf-tools-enabled-hook 'pdf-view-midnight-minor-mode)))
+#+end_src
+
+** Mastodon
+
+I like to access Mastodon from Emacs. The link to my instance is stored
+in a sensitive file.
+
+#+begin_src emacs-lisp
+  (use-package mastodon
+    :config (load (expand-file-name (concat user-emacs-directory "sensitive/mastodon.el"))))
+#+end_src
+
+** Slack
+
+Same goes for Slack. (Unfortunately, Slack is defective for now, as it
+relies on an oauth2 package)
+
+#+begin_src emacs-lisp
+  ;;(use-package slack)
+  ;;(use-package alert
+  ;;  :commands (alert)
+  ;;  :init (setq alert-default-style 'notifier))
+#+end_src
+
+** WakaTime
+
+I like to track my time with WakaTime. Gives me useful stats.
+WakaTime uses an API key which is stored on a sensible file.
+
+#+begin_src emacs-lisp
+  (use-package wakatime-mode
+    :config (progn
+              (load (expand-file-name (concat user-emacs-directory "sensitive/wakatime.el")))
+              (global-wakatime-mode)))
+#+end_src
+
+** nov.el
+
+Nov.el is good for reading EPUB files on Emacs.
+
+#+begin_src emacs-lisp
+  (use-package nov
+    :config (progn
+	      (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+	      (add-hook 'nav-mode-hook
+			(lambda ()
+			  (face-remap-add-relative 'variable-pitch
+						   :family "Liberation Serif"
+						   :height 1.0)))
+	      (setq nov-text-width 80)))
+#+end_src
+
+** Mu4e
+
+Mu4e is my favorite e-mail application. Fortunately, it can be
+installed from my distribution's package manager.
+
+Personal stuff should be in =sensitive/mail.el=.
+
+#+begin_src emacs-lisp
+  (when (eq system-type 'gnu/linux)
+    (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e"))
+
+  (require 'mu4e)
+  (require 'smtpmail)
+
+  (use-package mu4e-alert
+    :config (progn
+              (mu4e-alert-set-default-style 'libnotify)
+              (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+              (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
+
+  (setq mail-user-agent                   'mu4e-user-agent
+    message-send-mail-function        'smtpmail-send-it
+    message-kill-buffer-on-exit       t
+    mu4e-change-filenames-when-moving t
+    mu4e-view-show-images             t)
+
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
+
+  (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el")))
+#+end_src
+
+** Elfeed
+
+Elfeed is an RSS/Atom feed reader. The location of the Elfeed file is
+kept in a sensitive file.
+
+#+begin_src emacs-lisp
+  (load (expand-file-name (concat user-emacs-directory "sensitive/elfeed.el")))
+  (use-package elfeed-org)
+  (use-package elfeed
+    :requires elfeed-org
+    :config (progn
+	      (elfeed-org)
+	      (setq-default elfeed-search-filter "@3-days-ago +unread ")
+	      ;; Move forward and backward
+	      (define-key elfeed-show-mode-map (kbd "C-<right>") 'elfeed-show-next)
+	      (define-key elfeed-show-mode-map (kbd "C-<left>") 'elfeed-show-prev)
+	      (define-key elfeed-show-mode-map (kbd "k") 'elfeed-show-next)
+	      (define-key elfeed-show-mode-map (kbd "j") 'elfeed-show-prev)))
+#+end_src
+
+** Magit
+
+Magit is the awesome tool for Git usage.
+
+#+begin_src emacs-lisp
+  (use-package magit)
+#+end_src
+
+** Helm-Spotify
+
+Controlling Spotify from Emacs/Dashboard (via dbus) uses a Helm interface.
+
+#+begin_src emacs-lisp
+  (use-package helm-spotify-plus)
+#+end_src
+
+** Dashboard
+
+Dashboard is the default startup page for my Emacs configuration.
+
+#+begin_src emacs-lisp
+  (use-package hackernews)
+  (use-package dashboard
+    :requires (all-the-icons hackernews)
+    :config (progn
+	      (dashboard-setup-startup-hook)
+	      (setq initial-buffer-choice
+		    (lambda () (get-buffer "*dashboard*")))
+	      (setq dashboard-banner-logo-title "Welcome to GNU Emacs.")
+	      (setq dashboard-startup-banner 'logo)
+	      (setq dashboard-center-content t)
+	      (setq dashboard-items '((bookmarks . 5)
+				      (projects  . 5)
+				      (agenda)))
+	      (setq dashboard-set-heading-icons t)
+	      (setq dashboard-set-file-icons t)
+	      (setq dashboard-set-navigator t)
+	      (setq dashboard-set-init-info t)
+	      (setq dashboard-set-navigator t)
+	      (setq dashboard-navigator-buttons
+		    `((("★" "Blog" "Alchemist's Hideout"
+			(lambda (&rest _)
+			  (browse-url "http://alchemist.sdf.org")))
+		       (,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
+			"GitHub"
+			"Go to GitHub profile"
+			(lambda (&rest _)
+			  (browse-url "https://github.com/luksamuk")))
+		       (,(all-the-icons-faicon "gitlab" :height 1.1 :v-adjust 0.0)
+			"GitLab"
+			"Go to Gitlab profile"
+			(lambda (&rest _)
+			  (browse-url "https://gitlab.com/luksamuk")))
+		       (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
+			"Instagram" "Go to Instagram"
+			(lambda (&rest _)
+			  (browse-url "https://instagram.com")))
+		       )
+		      ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
+			"Lobste.rs" "Open Lobste.rs client"
+			;; (lambda (&rest _)
+			;;   (browse-url "https://lobste.rs"))
+			(lambda (&rest _)
+			  (helm-lobsters)))
+		       (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
+			"Hacker News" "Open Hacker News client"
+			(lambda (&rest _)
+			  (hackernews)))
+		       (,(all-the-icons-faicon "spotify" :height 1.1 :v-adjust 0.0)
+			"Spotify" "Open Spotify client"
+			(lambda (&rest _)
+			  (helm-spotify-plus)))
+		       )
+		      ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
+			"Mastodon" "Open Mastodon client"
+			(lambda (&rest _)
+			  (mastodon)))
+		       (,(all-the-icons-faicon "envelope" :height 1.1 :v-adjust 0.0)
+			"Mail" "Open Mu4e mail client"
+			(lambda (&rest _)
+			  (mu4e)))
+		       (,(all-the-icons-faicon "rss" :height 1.1 :v-adjust 0.0)
+			"RSS" "Open Elfeed RSS client"
+			(lambda (&rest _)
+			  (elfeed)))
+		       (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
+			"Slack" "Open Slack client"
+			(lambda (&rest _)
+			  (slack-start)))
+		       )
+		      ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
+			"" "Browse website using w3m"
+			(lambda (&rest _)
+			  (w3m)))
+		       (,(all-the-icons-faicon "refresh" :height 1.1 :v-adjust 0.0)
+			"" "Refresh Dashboard"
+			(lambda (&rest _)
+			  (dashboard-refresh-buffer)))
+		       )))
+	      (setq dashboard-footer-icon
+		    (all-the-icons-octicon "dashboard"
+					   :height 1.1
+					   :v-adjust -0.05
+					   :face 'font-lock-keyword-face))))
+
+
+#+end_src
