@@ -2,26 +2,66 @@
 #+AUTHOR:   Lucas Vieira
 #+BABEL:    :cache yes
 #+PROPERTY: header-args :tangle yes
-#+STARTUP:  overview
+#+STARTUP:  overview inlineimages
 
-* First-time initialization
+* Introduction
 
-If you are using this configuration for the first time, you
-should put the following code on =.emacs.d/init.el=. It is
-responsible for bootstrapping the entire thing. Notice that
-it is not tangled along with the rest!
+Welcome to my Emacs configuration. To use it, put this file, the =elisp=
+and =sensitive= folders under your =.emacs.d= directory.
 
-#+begin_src emacs-lisp :tangle no
-  (require 'org)
+** Usage
 
-  (find-file (concat user-emacs-directory "init.org"))
-  (org-babel-tangle)
-  (load-file (concat user-emacs-directory "init.el"))
-  (byte-compile-file (concat user-emacs-directory "init.el"))
-#+end_src
+It is advised to change and/or encrypt the files under =sensitive= to
+your taste (or just remove their related configuration below).
+
+After doing all of that, copy the contents described under the
+[[#sec:bootstrapping][Bootstrapping]] to an =init.el= file under =.emacs.d=, and open
+Emacs. This will tangle and compile this file, replacing the
+bootstrapping =init.el=.
+
+** Dependencies
+
+This configuration runs file on Emacs 26.2, but is also expected to
+run on Emacs 24. Package compatibility is not checked.
+
+As for external binaries, here is a list. Notice that some may not be
+vital, and can be replaced/removed.
+
+- =Dina= (default font)
+- =Firefox= (default browser)
+- =cmake= and =rtags= (for CMake IDE)
+- =gforth= (for Forth evaluation)
+- =go= and =godoctor= (for Go Flycheck support)
+- =ghc= and =stack= (for Haskell Intero IDE)
+- =SLIME=, installed via =Roswell= (for Common Lisp)
+- =Qlot=, installed via =Roswell= (for Common Lisp also)
+- =Chez Scheme= (for Scheme)
+- =purs= and =npm= (for PureScript)
+- =rustup=, =rustc=, =cargo= and =racer= (for Rust)
+- =TexLive= and =rubber= (for AUCTeX, Org LaTeX export, LaTeX, etc)
+- =zsh= (for Ansi-Term)
+- =wakatime= (for WakaTime)
+- =unzip= and =libxml2= support on Emacs (for nov.el)
+- =mu4e=, =isync/mbsync=, =gpg2=, =awk= (for Mu4e)
+- =git= (for Magit)
+- =Spotify=, =dbus= (for Spotify)
+
+** Screenshots
+
+Here are some screenshots of how it will look after the configuration.
+Notice that transparency is due to a [[https://github.com/tryone144/compton][special fork of compton]].
+
+#+ATTR_ORG: :width 50% :height 50%
+[[./screenshots/screen01.png]]
+
+#+ATTR_ORG: :width 50% :height 50%
+[[./screenshots/screen02.png]]
 
 * Preparation
 ** Bootstrapping
+:PROPERTIES:
+:CUSTOM_ID: sec:bootstrapping
+:END:
 
 This init file is heavily inspired by [[https://github.com/freetonik/emacs-dotfiles][freetonik]]'s.
 
@@ -45,7 +85,9 @@ Tangle and compile this file on save.
   (add-hook 'after-save-hook 'tangle-init)
 #+end_src
 
-Remove /functions might not be defined at runtime/ warnings.
+This block removes the /"functions might not be defined at runtime"/
+warnings. However it never showed up on my configuration, so I'll just
+leave it commented.
 
 #+begin_src emacs-lisp
   ;;(eval-when-compile
@@ -55,6 +97,7 @@ Remove /functions might not be defined at runtime/ warnings.
 ** Packaging
 
 Prepare packages.
+I don't use =melpa-stable=, only because it lacks certain packages.
 
 #+begin_src emacs-lisp
 ;;;; Packaging
@@ -68,7 +111,8 @@ Prepare packages.
 (package-initialize)
 #+end_src
 
-Install use-package.
+Now we install =use-package=. All subsequent packages are managed by
+it.
 
 #+begin_src emacs-lisp
   (unless (package-installed-p 'use-package)
@@ -135,23 +179,23 @@ I use kaolin-bubblegum as my default theme.
 There are also some general rules I set up manually.
 
 #+begin_src emacs-lisp
-  (setq inhibit-startup-screen        t
-	inhibit-splash-screen         t
-	show-paren-mode               1
-	show-paren-delay              0
-	scroll-bar-mode               -1
-	browser-url-browse-function   'browse-url-firefox
-	linum-format                  "%5d"
-	tab-width                     4
-	;; Mouse
-	transentient-mark-mode        t
-	mouse-wheel-follow-mouse      t
-	scroll-step                   1
-	scroll-conservatively         101
-	mouse-wheel-scroll-amount     '(1)
-	mouse-wheel-progressive-speed nil)
-  (menu-bar-mode -99)
-  (tool-bar-mode -1)
+(setq inhibit-startup-screen        t
+      inhibit-splash-screen         t
+      show-paren-mode               1
+      show-paren-delay              0
+      scroll-bar-mode               -1
+      browser-url-browse-function   'browse-url-firefox
+      linum-format                  "%5d"
+      tab-width                     4
+      ;; Mouse
+      transentient-mark-mode        t
+      mouse-wheel-follow-mouse      t
+      scroll-step                   1
+      scroll-conservatively         101
+      mouse-wheel-scroll-amount     '(1)
+      mouse-wheel-progressive-speed nil)
+(menu-bar-mode -99)
+(tool-bar-mode -1)
 #+end_src
 
 Unfortunately, =linum-mode= doesn't work properly with some
@@ -209,7 +253,7 @@ I use =telephone-line= for that.
 
 Now we create configurations for programming languages.
 
-This should give us nice guide rulers for indentation.
+** General
 #+TODO: Add indent-guide.
 
 This should give us nice, highlighted numbers across all programming
@@ -288,6 +332,13 @@ is defined in a sensitive file.
   (load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
 #+end_src
 
+Since I sync my agenda files across the web, it is very important that
+Org files have auto-revert turned on by default.
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'auto-revert-mode)
+#+end_src
+
 *** Appearance
 
 Let's make sure our Org mode indents and wraps around the 80th column
@@ -319,13 +370,13 @@ source blocks indentation, make tab acts natively, fontify, ensure
 org-babel checks before evaluation, support shift select.
 
 #+begin_src emacs-lisp
-  (setq org-hide-emphasis-markers        t
-	org-edit-src-content-indentation 0
-	org-src-tab-acts-natively        t
-	org-src-fontify-natively         t
-	org-src-preserve-indentation     t
-	org-confirm-babel-evaluate       t
-	org-support-shift-select         'always)
+(setq org-hide-emphasis-markers        t
+      org-edit-src-content-indentation 0
+      org-src-tab-acts-natively        t
+      org-src-fontify-natively         t
+      org-src-preserve-indentation     t
+      org-confirm-babel-evaluate       t
+      org-support-shift-select         'always)
 #+end_src
 
 *** Alert
@@ -679,21 +730,38 @@ Use rainbow-delimiters to colorize parens.
               (add-hook 'scheme-mode-hook     #'rainbow-delimiters-mode)))
 #+end_src
 
+Highlight parentheses to highlight what we're closing.
+Instead of resorting to external stuff, we use Emacs' built-in
+=show-paren-mode=.
+
+There are three modes for =show-paren-mode=. One which highlights the
+brackets only, one which highlights the whole expression, and one
+which is mixed (highlights expression if the matching paren is not
+visible). I opt for the latter.
+
+For more information, check out [[http://ergoemacs.org/emacs/emacs_highlight_parenthesis.html][this article]] on ErgoEmacs.
+
+#+begin_src emacs-lisp
+(require 'paren)
+(show-paren-mode 1)
+(setq show-paren-style 'mixed)
+#+end_src
+
 ** PureScript
 
 We use the PureScript IDE. Make sure PureScript is properly installed.
 
 #+begin_src emacs-lisp
-  (use-package purescript-mode)
-  (use-package psc-ide
-    :requires purescript-mode
-    :config (progn
-	      (add-hook 'purescript-mode-hook #'psc-ide-mode)
-	      (add-hook 'purescript-mode-hook #'company-mode)
-	      (add-hook 'purescript-mode-hook #'flycheck-mode)
-	      (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
-	      (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation)
-	      (setq psc-ide-use-npm-bin t)))
+(use-package purescript-mode)
+(use-package psc-ide
+  :requires purescript-mode
+  :config (progn
+	    (add-hook 'purescript-mode-hook #'psc-ide-mode)
+	    (add-hook 'purescript-mode-hook #'company-mode)
+	    (add-hook 'purescript-mode-hook #'flycheck-mode)
+	    (add-hook 'purescript-mode-hook #'prettify-symbols-mode)
+	    (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation)
+	    (setq psc-ide-use-npm-bin t)))
 
 #+end_src
 
@@ -843,7 +911,8 @@ in a sensitive file.
 
 #+begin_src emacs-lisp
   (use-package mastodon
-    :config (load (expand-file-name (concat user-emacs-directory "sensitive/mastodon.el"))))
+    :config
+    (load (expand-file-name (concat user-emacs-directory "sensitive/mastodon.el"))))
 #+end_src
 
 ** Slack
@@ -894,28 +963,104 @@ installed from my distribution's package manager.
 Personal stuff should be in =sensitive/mail.el=.
 
 #+begin_src emacs-lisp
-  (when (eq system-type 'gnu/linux)
-    (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e"))
+(when (eq system-type 'gnu/linux)
+  (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
 
   (require 'mu4e)
   (require 'smtpmail)
 
   (use-package mu4e-alert
     :config (progn
-              (mu4e-alert-set-default-style 'libnotify)
-              (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
-              (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
+	      (mu4e-alert-set-default-style 'libnotify)
+	      (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+	      (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
 
   (setq mail-user-agent                   'mu4e-user-agent
-    message-send-mail-function        'smtpmail-send-it
-    message-kill-buffer-on-exit       t
-    mu4e-change-filenames-when-moving t
-    mu4e-view-show-images             t)
+	message-send-mail-function        'smtpmail-send-it
+	message-kill-buffer-on-exit       t
+	mu4e-change-filenames-when-moving t
+	mu4e-view-show-images             t)
 
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
 
-  (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el")))
+  (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el"))))
+#+end_src
+
+*** Extra configuration
+
+I think it is interesting to describe other stuff I did here. I use
+ProtonMail Bridge to help me manage my mail, and it is synced using
+=mbsync=. To make it work, it is important to have some more
+configuration.
+
+Here is my =.mbsyncrc= file.
+
+#+begin_example
+IMAPAccount protonmail
+Host 127.0.0.1
+Port PROTONMAIL-BRIDGE-GIVEN-IMAP-PORT
+User mymail@example.com
+PassCmd "gpg2 -q -d /path/to/authinfo.gpg | awk 'FNR == 1 {print $8}'"
+SSLType NONE
+
+IMAPStore remote
+Account protonmail
+
+MaildirStore local
+Subfolders Verbatim
+Path  /path/to/my/mail/box
+Inbox /path/to/my/mail/box/INBOX/
+
+Channel inbox
+Master :remote:
+Slave :local:
+Patterns * !"Drafts" !"All Mail"
+Create Slave
+SyncState *
+Sync All
+Expunge Both
+
+Group protonmail
+Channel inbox
+#+end_example
+
+And here is how I defined my Mu4e context for ProtonMail. I have
+omitted the sensitive parts, but this should give you a heads-up on
+how to setup the =mu4e-contexts= variable.
+
+
+
+#+begin_src emacs-lisp :tangle no
+;; This code snippet SHOULD NOT BE TANGLED with the rest of the
+;; configuration. Edit the sensitive/mail.el file if you need
+;; to modify this code.
+
+(setq mu4e-compose-signature "My Awesome Signature"
+      mu4e-maildir-shortcuts '(("/INBOX"   . ?i)
+			       ("/Sent"    . ?s)
+			       ("/Drafts"  . ?d)
+			       ("/Archive" . ?a)
+			       ("/Trash"   . ?t)))
+
+(setq mu4e-contexts
+      `(,(make-mu4e-context
+          :name "Protonmail"
+          :vars
+	  `((mu4e-maildir          . ,(expand-file-name "/path/to/my/mail/box"))
+	    (user-mail-address     . "mymail@example.com")
+	    (user-full-name        . "My Name")
+	    (mu4e-attachment-dir   . "/path/to/attachment/download/dir")
+	    (mu4e-trash-folder     . "/Trash")
+	    (mu4e-refile-folder    . "/Archive")
+	    (mu4e-drafts-folder    . "/Drafts")
+	    (mu4e-sent-folder      . "/Sent")
+	    (mu4e-get-mail-command . "mbsync protonmail")
+	    (smtpmail-smtp-user    . "mymail@example.com")
+	    (smtpmail-stream-type  . starttls)
+	    (smtpmail-auth-credentials . "/path/to/authinfo.gpg")
+	    (smtpmail-smtp-server  . "127.0.0.1")
+	    (smtpmail-smtp-service . PROTONMAIL-BRIDGE-GIVEN-SMTP-PORT)))))
 #+end_src
 
 ** Elfeed
@@ -954,6 +1099,19 @@ Controlling Spotify from Emacs/Dashboard (via dbus) uses a Helm interface.
   (use-package helm-spotify-plus)
 #+end_src
 
+If Emacs cannot access =dbus= (or Spotify is not recognized by =dbus=), it
+may be interesting to have a script to invoke Emacs as follows (which
+can be adapted into Spotify's):
+
+#+begin_src bash :tangle no
+#!/bin/bash
+
+source $HOME/.dbus/session-bus/*
+export DBUS_SESSION_BUS_ADDRESS
+export DBUS_SESSION_BUS_PID
+emacs --daemon &
+#+end_src
+
 ** Dashboard
 
 Dashboard is the default startup page for my Emacs configuration.
@@ -964,20 +1122,31 @@ Dashboard is the default startup page for my Emacs configuration.
     :requires (all-the-icons hackernews)
     :config (progn
 	      (dashboard-setup-startup-hook)
-	      (setq initial-buffer-choice
-		    (lambda () (get-buffer "*dashboard*")))
-	      (setq dashboard-banner-logo-title "Welcome to GNU Emacs.")
-	      (setq dashboard-startup-banner 'logo)
-	      (setq dashboard-center-content t)
-	      (setq dashboard-items '((bookmarks . 5)
+	      (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
+		    dashboard-banner-logo-title "Welcome to GNU Emacs."
+		    dashboard-startup-banner    'logo
+		    dashboard-center-content    t
+		    dashboard-set-heading-icons t
+		    dashboard-set-file-icons    t
+		    dashboard-set-navigator     t
+		    dashboard-set-init-info     t
+		    dashboard-set-navigator     t
+		    
+		    ;;; Items
+		    dashboard-items '((bookmarks . 5)
 				      (projects  . 5)
-				      (agenda)))
-	      (setq dashboard-set-heading-icons t)
-	      (setq dashboard-set-file-icons t)
-	      (setq dashboard-set-navigator t)
-	      (setq dashboard-set-init-info t)
-	      (setq dashboard-set-navigator t)
-	      (setq dashboard-navigator-buttons
+				      (agenda))
+
+		    ;;; Footer
+		    dashboard-footer-icon
+		    (all-the-icons-octicon "dashboard"
+					   :height 1.1
+					   :v-adjust -0.05
+					   :face 'font-lock-keyword-face)
+		    
+		    ;;; Buttons
+		    dashboard-navigator-buttons
+		    ;; Line 1
 		    `((("★" "Blog" "Alchemist's Hideout"
 			(lambda (&rest _)
 			  (browse-url "http://alchemist.sdf.org")))
@@ -998,8 +1167,6 @@ Dashboard is the default startup page for my Emacs configuration.
 		       )
 		      ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
 			"Lobste.rs" "Open Lobste.rs client"
-			;; (lambda (&rest _)
-			;;   (browse-url "https://lobste.rs"))
 			(lambda (&rest _)
 			  (helm-lobsters)))
 		       (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
@@ -1011,6 +1178,7 @@ Dashboard is the default startup page for my Emacs configuration.
 			(lambda (&rest _)
 			  (helm-spotify-plus)))
 		       )
+		      ;; Line 2
 		      ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
 			"Mastodon" "Open Mastodon client"
 			(lambda (&rest _)
@@ -1023,11 +1191,12 @@ Dashboard is the default startup page for my Emacs configuration.
 			"RSS" "Open Elfeed RSS client"
 			(lambda (&rest _)
 			  (elfeed)))
-		       (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
-			"Slack" "Open Slack client"
-			(lambda (&rest _)
-			  (slack-start)))
+		       ;; (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
+		       ;; 	"Slack" "Open Slack client"
+		       ;; 	(lambda (&rest _)
+		       ;; 	  (slack-start)))
 		       )
+		      ;; Line 3
 		      ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
 			"" "Browse website using w3m"
 			(lambda (&rest _)
@@ -1036,12 +1205,8 @@ Dashboard is the default startup page for my Emacs configuration.
 			"" "Refresh Dashboard"
 			(lambda (&rest _)
 			  (dashboard-refresh-buffer)))
-		       )))
-	      (setq dashboard-footer-icon
-		    (all-the-icons-octicon "dashboard"
-					   :height 1.1
-					   :v-adjust -0.05
-					   :face 'font-lock-keyword-face))))
+		       )))))
 
 
 #+end_src
+
