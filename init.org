@@ -45,6 +45,7 @@ vital, and can be replaced/removed.
 - =mu4e=, =isync/mbsync=, =gpg2=, =awk= (for Mu4e)
 - =git= (for Magit)
 - =Spotify=, =dbus= (for Spotify)
+- =w3m= (for w3m browser)
 
 ** Screenshots
 
@@ -1110,6 +1111,13 @@ source $HOME/.dbus/session-bus/*
 export DBUS_SESSION_BUS_ADDRESS
 export DBUS_SESSION_BUS_PID
 emacs --daemon &
+#+end_src
+
+** w3m
+
+For browsing inside Emacs, I usually use w3m.
+#+begin_src emacs-lisp
+(use-package w3m)
 #+end_src
 
 ** Dashboard
