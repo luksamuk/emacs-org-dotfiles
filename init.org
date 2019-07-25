@@ -279,6 +279,13 @@ Flycheck and Semantic.
   (semantic-mode 1)
 #+end_src
 
+Org and Mu4e's compose buffer use =auto-fill-mode=. I like to wrap on
+column 80.
+
+#+begin_src emacs-lisp
+(setq fill-column 80)
+#+end_src
+
 ** Org
 
 Org mode already comes with Emacs, but it is important that we make
@@ -986,6 +993,14 @@ Personal stuff should be in =sensitive/mail.el=.
     (imagemagick-register-types))
 
   (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el"))))
+#+end_src
+
+Let's make sure that mu4e messages wrap on column 80, just like Org. I
+also like the usage of format=flowed.
+
+#+begin_src emacs-lisp
+(add-hook 'message-mode-hook 'auto-fill-mode)
+(setq mu4e-compose-format-flowed t)
 #+end_src
 
 *** Extra configuration
