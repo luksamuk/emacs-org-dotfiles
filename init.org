@@ -99,11 +99,10 @@ leave it commented.
 
 Prepare packages.
 I don't use =melpa-stable=, only because it lacks certain packages.
+Also, somehow, =elpa= is inaccessible over HTTPS.
 
 #+begin_src emacs-lisp
-;;;; Packaging
-
-(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
 			 ("marmalade" . "https://marmalade-repo.org/packages/")
 			 ;;("melpa-stable" . "https://stable.melpa.org/packages/")
 			 ("melpa" . "https://melpa.org/packages/")
@@ -716,6 +715,15 @@ to Chez Scheme.
 #+begin_src emacs-lisp
   (use-package geiser
     :config (setq geiser-default-implementation 'chez))
+#+end_src
+
+*** Shen
+
+We use Shen's Elisp backend.
+
+#+begin_src emacs-lisp
+(use-package shen-mode)
+(use-package shen-elisp)
 #+end_src
 
 *** Appearance
