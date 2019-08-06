@@ -141,16 +141,17 @@ Let's move it out of the way.
 There are many fonts I usually choose. I just uncomment as needed.
 
 #+begin_src emacs-lisp
-  ;;(defconst my-default-font "-*-fixed-medium-r-normal-*-15-*-*-*-*-*-*-*")
-  ;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
-  ;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
-  ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
-  ;;(defconst my-default-font "Monoid-9")
-  ;;(defconst my-default-font "Fixed-10")
-  (defconst my-default-font "Dina-10")
-  ;;(defconst my-default-font "Iosevka-9")
-  ;;(defconst my-default-font "Terminus-10")
-  ;;(defconst my-default-font "Hack-10")
+;;(defconst my-default-font "-*-fixed-medium-r-normal-*-15-*-*-*-*-*-*-*")
+;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
+;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
+;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
+;;(defconst my-default-font "Monoid-9")
+;;(defconst my-default-font "Fixed-10")
+(defconst my-default-font "Dina-10")
+;;(defconst my-default-font "FreeMono-10")
+;;(defconst my-default-font "Iosevka-9")
+;;(defconst my-default-font "Terminus-10")
+;;(defconst my-default-font "Hack-10")
 #+end_src
 
 ** Visual
@@ -595,6 +596,36 @@ Bibliography location is stored on a sensitive file.
               (require 'org-ref-url-utils))
 #+end_src
 
+** APL
+
+APL language configuration, for writing APL programs.
+
+#+begin_src emacs-lisp
+(use-package gnu-apl-mode)
+#+end_src
+
+Since I already use the SUPER key on =bspwm=, I bind SUPER+p for APL
+input.
+
+#+begin_src emacs-lisp
+(setq gnu-apl-mode-map-prefix "s-p")
+#+end_src
+
+I use GNU FreeFont when programming in APL.
+
+#+begin_src emacs-lisp
+(defun em-gnu-apl-init ()
+  (interactive)
+  (setq buffer-face-mode-face '(:family "FreeMono" :height 100))
+  (buffer-face-mode))
+
+(add-hook 'gnu-apl-interactive-mode-hook 'em-gnu-apl-init)
+(add-hook 'gnu-apl-mode-hook 'em-gnu-apl-init)
+#+end_src
+
+Do not forget to =M-x set-input-method= before switching to =APL-Z= input
+method with =C-\=!
+
 ** Assembly
 
 Make sure =nasm-mode= is used for all Assembly files.
@@ -713,8 +744,14 @@ We just make sure Geiser is installed, Plus, set its default implementation
 to Chez Scheme.
 
 #+begin_src emacs-lisp
-  (use-package geiser
-    :config (setq geiser-default-implementation 'chez))
+(use-package geiser
+  :config (setq geiser-default-implementation 'chez))
+#+end_src
+
+We also make sure that we have Racket support.
+
+#+begin_src emacs-lisp
+(use-package racket-mode)
 #+end_src
 
 *** Shen
