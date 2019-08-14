@@ -46,6 +46,10 @@ vital, and can be replaced/removed.
 - =git= (for Magit)
 - =Spotify=, =dbus= (for Spotify)
 - =w3m= (for w3m browser)
+- =clojure= and =leiningen= (for Clojure)
+- =shen= (Common Lisp build, for Shen)
+- =GNU APL= (for APL)
+- =GNU FreeFont=, specially =FreeMono= (for APL)
 
 ** Screenshots
 
@@ -115,13 +119,13 @@ Now we install =use-package=. All subsequent packages are managed by
 it.
 
 #+begin_src emacs-lisp
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
-  (eval-when-compile (require 'use-package))
+(eval-when-compile (require 'use-package))
 
-  (setq use-package-always-ensure t)
+(setq use-package-always-ensure t)
 #+end_src
 
 ** Custom
@@ -147,10 +151,10 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
 ;;(defconst my-default-font "Monoid-9")
 ;;(defconst my-default-font "Fixed-10")
-(defconst my-default-font "Dina-10")
+;;(defconst my-default-font "Dina-10")
 ;;(defconst my-default-font "FreeMono-10")
 ;;(defconst my-default-font "Iosevka-9")
-;;(defconst my-default-font "Terminus-10")
+(defconst my-default-font "Terminus-10")
 ;;(defconst my-default-font "Hack-10")
 #+end_src
 
@@ -160,21 +164,21 @@ We create a frame a-list which is applied, so that we have customizations
 set at standalone or daemonized Emacs.
 
 #+begin_src emacs-lisp
-  (defconst my-frame-alist
-    `((font                 . ,my-default-font)
-      (scroll-bar           . -1)
-      (height               . 60)
-      (width                . 95)
-      (alpha                . 95)
-      (vertical-scroll-bars . nil)))
-  (setq default-frame-alist my-frame-alist)
+(defconst my-frame-alist
+  `((font                 . ,my-default-font)
+    (scroll-bar           . -1)
+    (height               . 60)
+    (width                . 95)
+    (alpha                . 95)
+    (vertical-scroll-bars . nil)))
+(setq default-frame-alist my-frame-alist)
 #+end_src
 
 I use kaolin-bubblegum as my default theme.
 
 #+begin_src emacs-lisp
-  (use-package kaolin-themes
-    :config (load-theme 'kaolin-bubblegum t))
+(use-package kaolin-themes
+  :config (load-theme 'kaolin-bubblegum t))
 #+end_src
 
 There are also some general rules I set up manually.
@@ -202,8 +206,8 @@ There are also some general rules I set up manually.
 Unfortunately, =linum-mode= doesn't work properly with some
 buffers, so we add it to the hook for programming modes.
 
-#+begin_src lisp
-  (add-hook 'prog-mode-hook 'linum-mode)
+#+begin_src emacs-lisp
+(add-hook 'prog-mode-hook 'linum-mode)
 #+end_src
 
 ** Keybindings
@@ -292,7 +296,7 @@ Org mode already comes with Emacs, but it is important that we make
 sure we have the latest version installed.
 
 #+begin_src emacs-lisp
-  (use-package org :ensure org-plus-contrib)
+(use-package org :ensure org-plus-contrib)
 #+end_src
 
 *** Agenda
@@ -455,20 +459,19 @@ Unfortunately, newer versions of Org do not include template
 snippets. Let's fix this.
 
 #+begin_src emacs-lisp
-  (define-key org-mode-map (kbd "C-c C-x t") #'org-insert-structure-template)
+(define-key org-mode-map (kbd "C-c C-x t") #'org-insert-structure-template)
 
-  (setq org-structure-template-alist
-	'(("n" . "notes")
-	  ("a" . "export ascii")
-	  ("c" . "center")
-	  ("C" . "comment")
-	  ("e" . "example")
-	  ("E" . "export")
-	  ("h" . "export html")
-	  ("l" . "export latex")
-	  ("q" . "quote")
-	  ("s" . "src")
-	  ("v" . "verse")))
+(setq org-structure-template-alist
+      '(("a" . "export ascii")
+        ("c" . "center")
+        ("C" . "comment")
+        ("e" . "example")
+        ("E" . "export")
+        ("h" . "export html")
+        ("l" . "export latex")
+        ("q" . "quote")
+        ("s" . "src")
+        ("v" . "verse")))
 #+end_src
 
 *** Exports
@@ -476,15 +479,15 @@ snippets. Let's fix this.
 Let's begin by setting up a few things for Babel.
 
 #+begin_src emacs-lisp
-  (setq org-export-allow-bind-keywords t)
+(setq org-export-allow-bind-keywords t)
 
-  (use-package ob-go)
-  (org-babel-do-load-languages 'org-babel-load-languages
-			       '((lisp  . t)
-				 (go    . t)
-				 (shell . t)
-				 (dot   . t)
-				 (lisp  . t)))
+(use-package ob-go)
+(org-babel-do-load-languages 'org-babel-load-languages
+			     '((lisp  . t)
+			       (go    . t)
+			       (shell . t)
+			       (dot   . t)
+			       (C     . t)))
 #+end_src
 
 **** HTML
@@ -492,38 +495,39 @@ Let's begin by setting up a few things for Babel.
 Configure Htmlize to preferred defaults.
 
 #+begin_src emacs-lisp
-  (use-package htmlize
-    :config (setq htmlize-output-type 'css))
+(use-package htmlize
+  :config (setq htmlize-output-type 'css))
 #+end_src
 
 **** LaTeX
 
 #+begin_src emacs-lisp
-  (require 'ox-latex)
-  (unless (boundp 'org-latex-classes)
-    (setq org-latex-classes nil))
-  (add-to-list 'org-latex-classes
-	       '("abntex2"
-		 "\\documentclass{abntex2}
+(require 'ox-latex)
+(unless (boundp 'org-latex-classes)
+  (setq org-latex-classes nil))
+(add-to-list 'org-latex-classes
+	     '("abntex2"
+	       "\\documentclass{abntex2}
 		  [NO-DEFAULT-PACKAGES]
 		  [EXTRA]"
-		 ("\\section{%s}" . "\\section*{%s}")
-		 ("\\subsection{%s}" . "\\subsection*{%s}")
-		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-		 ("\\maketitle" . "\\imprimircapa"))
-	       '("ufvjm"
-		 "\\documentclass[article,12pt,openany,oneside,a4paper,chapter=TITLE,hyphen,english,brazil,sumario=tradicional]{abntex2}
-		  [NO-DEFAULT-PACKAGES]
-		  [EXTRA]"
-		 ("\\section{%s}" . "\\section*{%s}")
-		 ("\\subsection{%s}" . "\\subsection*{%s}")
-		 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-		 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-		 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-		 ("\\maketitle" . "\\imprimircapa")))
-  (setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdf %f"))
+	       ("\\section{%s}" . "\\section*{%s}")
+	       ("\\subsection{%s}" . "\\subsection*{%s}")
+	       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
+	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+	       ("\\maketitle" . "\\imprimircapa")))
+#+end_src
+
+I also like to use the plain PDF export.
+
+#+begin_src emacs-lisp
+(setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdf %f"))
+#+end_src
+
+Also, for buffer images to scale and look good, we use this:
+
+#+begin_src emacs-lisp
+(plist-put org-format-latex-options :scale 2.0)
 #+end_src
 
 **** Reveal.js
@@ -600,6 +604,8 @@ Bibliography location is stored on a sensitive file.
 
 APL language configuration, for writing APL programs.
 
+*** GNU APL
+
 #+begin_src emacs-lisp
 (use-package gnu-apl-mode)
 #+end_src
@@ -625,6 +631,7 @@ I use GNU FreeFont when programming in APL.
 
 Do not forget to =M-x set-input-method= before switching to =APL-Z= input
 method with =C-\=!
+
 
 ** Assembly
 
@@ -763,24 +770,37 @@ We use Shen's Elisp backend.
 (use-package shen-elisp)
 #+end_src
 
+*** Clojure
+
+I don't do any Clojure, but when I do, I do it in Emacs.
+
+#+begin_src emacs-lisp
+(use-package clojure-mode)
+#+end_src
+
 *** Appearance
 
 Use prettify-symbols-mode on all Lisps.
 
 #+begin_src emacs-lisp
-  (add-hook 'lisp-mode-hook       #'prettify-symbols-mode)
-  (add-hook 'emacs-lisp-mode-hook #'prettify-symbols-mode)
-  (add-hook 'scheme-mode-hook     #'prettify-symbols-mode)
+(mapc (lambda (hook) (add-hook hook #'prettify-symbols-mode))
+      '(lisp-mode-hook
+        emacs-lisp-mode-hook
+        scheme-mode-hook
+        shen-mode-hook
+        clojure-mode-hook))
 #+end_src
 
 Use rainbow-delimiters to colorize parens.
 
 #+begin_src emacs-lisp
-  (use-package rainbow-delimiters
-    :config (progn
-              (add-hook 'lisp-mode-hook       #'rainbow-delimiters-mode)
-              (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
-              (add-hook 'scheme-mode-hook     #'rainbow-delimiters-mode)))
+(use-package rainbow-delimiters
+  :config (mapc (lambda (hook) (add-hook hook #'rainbow-delimiters-mode))
+		'(lisp-mode-hook
+		  emacs-lisp-mode-hook
+		  scheme-mode-hook
+		  shen-mode-hook
+		  clojure-mode-hook)))
 #+end_src
 
 Highlight parentheses to highlight what we're closing.
