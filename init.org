@@ -2,7 +2,7 @@
 #+AUTHOR:   Lucas Vieira
 #+BABEL:    :cache yes
 #+PROPERTY: header-args :tangle yes
-#+STARTUP:  overview inlineimages
+#+STARTUP:  content
 
 * Introduction
 
@@ -49,7 +49,9 @@ vital, and can be replaced/removed.
 - =clojure= and =leiningen= (for Clojure)
 - =shen= (Common Lisp build, for Shen)
 - =GNU APL= (for APL)
-- =GNU FreeFont=, specially =FreeMono= (for APL)
+- =GNU FreeFont=, specially =FreeMono= (for GNU APL)
+- =APL385 Unicode= font (for GNU and Dyalog APL; get at Dyalog page)
+- =Tern.js= (JavaScript, Node.js support; can be installed with =npm=)
 
 ** Screenshots
 
@@ -149,12 +151,13 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
 ;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
 ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
-;;(defconst my-default-font "Monoid-9")
+(defconst my-default-font "Monoid-8.5")
+;;(defconst my-default-font "APL385 Unicode-9")
 ;;(defconst my-default-font "Fixed-10")
 ;;(defconst my-default-font "Dina-10")
 ;;(defconst my-default-font "FreeMono-10")
 ;;(defconst my-default-font "Iosevka-9")
-(defconst my-default-font "Terminus-10")
+;;(defconst my-default-font "Terminus-10")
 ;;(defconst my-default-font "Hack-10")
 #+end_src
 
@@ -167,8 +170,8 @@ set at standalone or daemonized Emacs.
 (defconst my-frame-alist
   `((font                 . ,my-default-font)
     (scroll-bar           . -1)
-    (height               . 60)
-    (width                . 95)
+    (height               . 50)
+    (width                . 90)
     (alpha                . 95)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
@@ -259,28 +262,33 @@ I use =telephone-line= for that.
 Now we create configurations for programming languages.
 
 ** General
-#+TODO: Add indent-guide.
+Indent-guide is useful for showing guide lines on code.
+
+#+begin_src emacs-lisp
+(use-package indent-guide
+  :config (indent-guide-global-mode))
+#+end_src
 
 This should give us nice, highlighted numbers across all programming
 languages.
 
 #+begin_src emacs-lisp
-  (use-package highlight-numbers
-    :config (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+(use-package highlight-numbers
+  :config (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 #+end_src
 
 Let's also install and/or configure globally-needed packages, such as
 Flycheck and Semantic.
 
 #+begin_src emacs-lisp
-  (use-package flycheck)
-  (require 'semantic)
+(use-package flycheck)
+(require 'semantic)
 
-  (global-semanticdb-minor-mode        1)
-  (global-semantic-idle-scheduler-mode 1)
-  (global-semantic-stickyfunc-mode     0)
+(global-semanticdb-minor-mode        1)
+(global-semantic-idle-scheduler-mode 1)
+(global-semantic-stickyfunc-mode     0)
 
-  (semantic-mode 1)
+(semantic-mode 1)
 #+end_src
 
 Org and Mu4e's compose buffer use =auto-fill-mode=. I like to wrap on
@@ -291,12 +299,19 @@ column 80.
 #+end_src
 
 ** Org
-
+*** General
 Org mode already comes with Emacs, but it is important that we make
 sure we have the latest version installed.
 
 #+begin_src emacs-lisp
 (use-package org :ensure org-plus-contrib)
+#+end_src
+
+As a general note, I just disable the prompts for code evaluation on
+Org. You might want to remove this on your end.
+
+#+begin_src emacs-lisp
+(setq org-confirm-babel-evaluate nil)
 #+end_src
 
 *** Agenda
@@ -474,7 +489,7 @@ snippets. Let's fix this.
         ("v" . "verse")))
 #+end_src
 
-*** Exports
+*** Exports and Org-Babel
 
 Let's begin by setting up a few things for Babel.
 
@@ -482,12 +497,20 @@ Let's begin by setting up a few things for Babel.
 (setq org-export-allow-bind-keywords t)
 
 (use-package ob-go)
+(use-package ess) ;; package for languages such as Julia, R
 (org-babel-do-load-languages 'org-babel-load-languages
-			     '((lisp  . t)
-			       (go    . t)
-			       (shell . t)
-			       (dot   . t)
-			       (C     . t)))
+                             '((lisp  . t)
+                               (go    . t)
+                               (shell . t)
+                               (dot   . t)
+                               (js    . t)
+                               (julia . t)
+                               (C     . t)))
+
+(mapc (lambda (x)
+        (add-to-list 'org-babel-tangle-lang-exts x))
+      '(("js"      . "js")
+        ("gnu-apl" . "apl")))
 #+end_src
 
 **** HTML
@@ -527,7 +550,17 @@ I also like to use the plain PDF export.
 Also, for buffer images to scale and look good, we use this:
 
 #+begin_src emacs-lisp
-(plist-put org-format-latex-options :scale 2.0)
+;;(plist-put org-format-latex-options :scale 1.2)
+#+end_src
+
+When using the =minted= package for source code, make sure that /Common
+Lisp/ uses highlighting:
+
+#+begin_src emacs-lisp
+(setq org-latex-listings 'minted)
+(add-to-list 'org-latex-minted-langs
+	     '(lisp "common-lisp"))
+(add-to-list 'org-latex-packages-alist '("" "minted"))
 #+end_src
 
 **** Reveal.js
@@ -600,6 +633,21 @@ Bibliography location is stored on a sensitive file.
               (require 'org-ref-url-utils))
 #+end_src
 
+I also need a different citation type to conform with ABNT rules. This
+makes sure that ABNTeX2's =\citeonline{}= works.
+
+#+begin_src emacs-lisp
+(org-ref-define-citation-link "citeonline" ?o)
+#+end_src
+
+*** Presentations
+
+I use Epresentation which makes Emacs fullscreen in org.
+
+#+begin_src emacs-lisp
+(use-package epresent)
+#+end_src
+
 ** APL
 
 APL language configuration, for writing APL programs.
@@ -607,7 +655,8 @@ APL language configuration, for writing APL programs.
 *** GNU APL
 
 #+begin_src emacs-lisp
-(use-package gnu-apl-mode)
+(use-package gnu-apl-mode
+  :config (setq gnu-apl-show-tips-on-start nil))
 #+end_src
 
 Since I already use the SUPER key on =bspwm=, I bind SUPER+p for APL
@@ -617,21 +666,164 @@ input.
 (setq gnu-apl-mode-map-prefix "s-p")
 #+end_src
 
-I use GNU FreeFont when programming in APL.
+I sometimes use GNU FreeFont when programming in APL. The hooks are
+commented out, because usually the fonts I use have great support for
+APL symbols. However, the APL Keyboard needs FreeFont to render
+correctly.
+
+I also added support for APL385 Unicode font (which can be found on
+Dyalog APL's page).
 
 #+begin_src emacs-lisp
-(defun em-gnu-apl-init ()
+(defun gnu-apl-font-use-freemono ()
   (interactive)
   (setq buffer-face-mode-face '(:family "FreeMono" :height 100))
   (buffer-face-mode))
 
-(add-hook 'gnu-apl-interactive-mode-hook 'em-gnu-apl-init)
-(add-hook 'gnu-apl-mode-hook 'em-gnu-apl-init)
+(defun gnu-apl-font-use-385 ()
+  (interactive)
+  (setq buffer-face-mode-face '(:family "APL385 Unicode" :height 150))
+  (buffer-face-mode))
+
+;; (add-hook 'gnu-apl-interactive-mode-hook 'gnu-apl-font-use-freemono)
+;; (add-hook 'gnu-apl-mode-hook 'gnu-apl-font-use-freemono)
+(add-hook 'gnu-apl-interactive-mode-hook 'gnu-apl-font-use-385)
+(add-hook 'gnu-apl-mode-hook 'gnu-apl-font-use-385)
+(add-hook 'gnu-apl-keymap-mode-hook 'gnu-apl-font-use-freemono)
 #+end_src
 
-Do not forget to =M-x set-input-method= before switching to =APL-Z= input
-method with =C-\=!
+We need to set the input method for APL buffers. If it doesn't work, use =M-x
+set-input-method=:
 
+#+begin_src emacs-lisp
+(mapc (lambda (x)
+        (add-hook x (lambda ()
+                      (set-input-method "APL-Z"))))
+      '(gnu-apl-interactive-mode-hook
+        gnu-apl-mode-hook))
+#+end_src
+
+Switch to =APL-Z= input method with =C-\=!
+
+*** Dyalog APL
+
+For performance and extra tools, I use Dyalog for UNIX, though not in
+Emacs. However, =.dyalog= file type support is desired:
+
+#+begin_src emacs-lisp
+(use-package dyalog-mode)
+#+end_src
+
+Dyalog buffers are more usable with the APL385 Unicode font,
+previously stated on GNU APL section.
+
+#+begin_src emacs-lisp
+(add-hook 'dyalog-mode-hook 'gnu-apl-font-use-385)
+#+end_src
+
+**** XCompose helper
+
+One extra thing to remember is that one might want to input some
+characters in Dyalog APL. If enabling the APL keyboard is not working,
+then we just need to configure our =~/.XCompose= file.
+
+Here is how I enable my compose key to RCtrl on =.xinitrc=:
+
+#+begin_example
+$ setxkbmap -layout br -variant abnt2 -option compose:rctrl
+#+end_example
+
+Here is a part of =.XCompose= which binds =RCtrl + A= to write some APL
+characters.
+
+#+begin_src config-general :tangle no
+# APL Characters
+# https://www.x.org/releases/X11R7.7/doc/libX11/i18n/compose/en_US.UTF-8.html
+<Multi_key> <a> <dead_grave>      : "⋄"
+<Multi_key> <a> <s>               : "⌈"
+<Multi_key> <a> <exclam>          : "⌶"
+<Multi_key> <a> <1>               : "¨"
+<Multi_key> <a> <at>              : "⍫"
+<Multi_key> <a> <2>               : "¯"
+<Multi_key> <a> <numbersign>      : "⍒"
+<Multi_key> <a> <3>               : "<"
+<Multi_key> <a> <dollar>          : "⍋"
+<Multi_key> <a> <4>               : "≤"
+<Multi_key> <a> <percent>         : "⌽"
+<Multi_key> <a> <5>               : "="
+<Multi_key> <a> <dead_circumflex> : "⍉"
+<Multi_key> <a> <6>               : "≥"
+<Multi_key> <a> <ampersand>       : "⊖"
+<Multi_key> <a> <7>               : ">"
+<Multi_key> <a> <asterisk>        : "⍟"
+<Multi_key> <a> <8>               : "≠"
+<Multi_key> <a> <parenleft>       : "⍱"
+<Multi_key> <a> <9>               : "∨"
+<Multi_key> <a> <parenright>      : "⍲"
+<Multi_key> <a> <0>               : "∧"
+<Multi_key> <a> <underscore>      : "!"
+<Multi_key> <a> <minus>           : "×"
+<Multi_key> <a> <plus>            : "⌹"
+<Multi_key> <a> <equal>           : "÷"
+<Multi_key> <a> <q>               : "?"
+<Multi_key> <a> <W>               : "⍹"
+<Multi_key> <a> <w>               : "⍵"
+<Multi_key> <a> <E>               : "⍷"
+<Multi_key> <a> <e>               : "∊"
+<Multi_key> <a> <r>               : "⍴"
+<Multi_key> <a> <T>               : "⍨"
+<Multi_key> <a> <t>               : "∼"
+<Multi_key> <a> <Y>               : "¥"
+<Multi_key> <a> <y>               : "↑"
+<Multi_key> <a> <u>               : "↓"
+<Multi_key> <a> <I>               : "⍸"
+<Multi_key> <a> <i>               : "⍳"
+<Multi_key> <a> <O>               : "⍥"
+<Multi_key> <a> <o>               : "○"
+<Multi_key> <a> <P>               : "⍣"
+<Multi_key> <a> <p>               : "⋆"
+<Multi_key> <a> <braceleft>       : "⍞"
+<Multi_key> <a> <bracketleft>     : "←"
+<Multi_key> <a> <braceright>      : "⍬"
+<Multi_key> <a> <bracketright>    : "→"
+<Multi_key> <a> <bar>             : "⊣"
+<Multi_key> <a> <backslash>       : "⊢"
+<Multi_key> <a> <A>               : "⍶"
+<Multi_key> <a> <a>               : "⍺"
+<Multi_key> <a> <s>               : "⌈"
+<Multi_key> <a> <d>               : "⌊"
+<Multi_key> <a> <F>               : "⍫"
+<Multi_key> <a> <f>               : "_"
+<Multi_key> <a> <g>               : "∇"
+<Multi_key> <a> <H>               : "⍙"
+<Multi_key> <a> <h>               : "∆"
+<Multi_key> <a> <J>               : "⍤"
+<Multi_key> <a> <j>               : "∘"
+<Multi_key> <a> <K>               : "⌺"
+<Multi_key> <a> <k>               : "'"
+<Multi_key> <a> <L>               : "⌷"
+<Multi_key> <a> <l>               : "⎕"
+<Multi_key> <a> <colon>           : "≡"
+<Multi_key> <a> <semicolon>       : "⍎"
+<Multi_key> <a> <quotedbl>        : "≢"
+<Multi_key> <a> <apostrophe>      : "⍕"
+<Multi_key> <a> <z>               : "⊂"
+<Multi_key> <a> <X>               : "χ"
+<Multi_key> <a> <x>               : "⊃"
+<Multi_key> <a> <C>               : "⍧"
+<Multi_key> <a> <c>               : "∩"
+<Multi_key> <a> <v>               : "∪"
+<Multi_key> <a> <B>               : "£"
+<Multi_key> <a> <b>               : "⊥"
+<Multi_key> <a> <n>               : "⊤"
+<Multi_key> <a> <m>               : "|"
+<Multi_key> <a> <less>            : "⍪"
+<Multi_key> <a> <comma>           : "⍝"
+<Multi_key> <a> <greater>         : "⍀"
+# <Multi_key> <a> <period>        : "."
+<Multi_key> <a> <question>        : "⍠"
+<Multi_key> <a> <slash>           : "⌿"
+#+end_src
 
 ** Assembly
 
@@ -716,8 +908,14 @@ We also rely on flycheck for Go.
 Just make sure we are using intero-mode.
 
 #+begin_src emacs-lisp
-  (use-package intero
-    :config (add-hook 'haskell-mode-hook 'intero-mode))
+(use-package intero
+  :config (add-hook 'haskell-mode-hook 'intero-mode))
+#+end_src
+
+** Julia
+
+#+begin_src emacs-lisp
+(use-package julia-mode)
 #+end_src
 
 ** Lisp
@@ -820,6 +1018,19 @@ For more information, check out [[http://ergoemacs.org/emacs/emacs_highlight_par
 (setq show-paren-style 'mixed)
 #+end_src
 
+Also, damn that whole mix-up of tabs and spaces on all Lisps. Just use
+spaces at once.
+
+#+begin_src emacs-lisp
+(mapc (lambda (hook)
+        (add-hook hook #'(lambda () (setq indent-tabs-mode nil))))
+      '(lisp-mode-hook
+        emacs-lisp-mode-hook
+        scheme-mode-hook
+        shen-mode-hook
+        clojure-mode-hook))
+#+end_src
+
 ** PureScript
 
 We use the PureScript IDE. Make sure PureScript is properly installed.
@@ -914,10 +1125,59 @@ easier parens/javascript editing.
 				'(("css"  . (ac-source-css-property))
 				  ("html" . (ac-source-words-in-buffer
 					     ac-source-abbrev))))))
+	      (use-package json-mode)
 	      (use-package js2-mode
 		:config (progn
-			  (add-hook 'js2-mode-hook 'flow-minor-enable-automatically)
+			  (setq js2-highlight-level 3)
+			  (use-package flow-js2-mode
+			    :config (add-hook 'js2-mode-hook 'flow-minor-enable-automatically))
 			  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))))))
+#+end_src
+
+*** Node.js
+
+I use =tern.js= for JS autocompletions with Node.js. Make sure you have
+=tern= installed. You should also take a look at [[https://truongtx.me/2014/04/20/emacs-javascript-completion-and-refactoring][this tutorial]].
+
+#+begin_src emacs-lisp
+(use-package tern)
+(use-package tern-auto-complete
+  :config (progn
+	    (add-hook 'js2-mode-hook (lambda () (tern-mode t)))
+	    (add-hook 'js2-mode-hook 'auto-complete-mode)
+	    (eval-after-load 'tern
+	      '(progn
+		 (require 'tern-auto-complete)
+		 (tern-ac-setup)))))
+#+end_src
+
+For each new project, you need to create a =.tern-project= file on its
+folder and drop the following contents:
+
+#+begin_example
+{
+  "plugins": {
+    "node": {
+    }
+  }
+}
+#+end_example
+
+As for =npm=, I just install =npm-mode= and leave it globally enabled --
+what the heck, I use Emacs as a daemon anyway. I'll disable if
+anything seems weird.
+
+#+begin_src emacs-lisp
+(use-package npm-mode
+  :config (npm-global-mode))
+#+end_src
+
+** Config
+
+We use a mode for editing Linux config files.
+
+#+begin_src emacs-lisp
+(use-package config-general-mode)
 #+end_src
 
 * Miscellaneous
@@ -966,7 +1226,7 @@ I also like Neotree on the F8 key.
 				      (daemonp))
 				  'icons
 				'arrow)
-		    projectile-switch-project-action 'neotree-project-action)))
+		    projectile-switch-project-action 'neotree-projectile-action)))
 #+end_src
 
 ** PDF Tools
@@ -1177,7 +1437,7 @@ Magit is the awesome tool for Git usage.
 Controlling Spotify from Emacs/Dashboard (via dbus) uses a Helm interface.
 
 #+begin_src emacs-lisp
-  (use-package helm-spotify-plus)
+(use-package helm-spotify-plus)
 #+end_src
 
 If Emacs cannot access =dbus= (or Spotify is not recognized by =dbus=), it
@@ -1191,6 +1451,14 @@ source $HOME/.dbus/session-bus/*
 export DBUS_SESSION_BUS_ADDRESS
 export DBUS_SESSION_BUS_PID
 emacs --daemon &
+#+end_src
+
+** Helm-lobsters
+
+Show Lobste.rs' top stories using Help.
+
+#+begin_src emacs-lisp
+(use-package helm-lobsters)
 #+end_src
 
 ** w3m
