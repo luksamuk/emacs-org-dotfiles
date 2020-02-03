@@ -29,7 +29,7 @@ vital, and can be replaced/removed.
 
 - =Dina= (default font)
 - =Firefox= (default browser)
-- =cmake= and =rtags= (for CMake IDE)
+# - =cmake= and =rtags= (for CMake IDE)
 - =gforth= (for Forth evaluation)
 - =go= and =godoctor= (for Go Flycheck support)
 - =ghc= and =stack= (for Haskell Intero IDE)
@@ -52,6 +52,8 @@ vital, and can be replaced/removed.
 - =GNU FreeFont=, specially =FreeMono= (for GNU APL)
 - =APL385 Unicode= font (for GNU and Dyalog APL; get at Dyalog page)
 - =Tern.js= (JavaScript, Node.js support; can be installed with =npm=)
+- =Perl= (for =edbi=)
+- =Python 3=, =ipython=, =pip= for Python stuff
 
 ** Screenshots
 
@@ -151,14 +153,14 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
 ;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
 ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
-(defconst my-default-font "Monoid-8.5")
-;;(defconst my-default-font "APL385 Unicode-9")
+;;(defconst my-default-font "Monoid-8.5")
+;;(defconst my-default-font "APL385 Unicode-8")
 ;;(defconst my-default-font "Fixed-10")
 ;;(defconst my-default-font "Dina-10")
 ;;(defconst my-default-font "FreeMono-10")
 ;;(defconst my-default-font "Iosevka-9")
 ;;(defconst my-default-font "Terminus-10")
-;;(defconst my-default-font "Hack-10")
+(defconst my-default-font "Hack-10")
 #+end_src
 
 ** Visual
@@ -172,7 +174,9 @@ set at standalone or daemonized Emacs.
     (scroll-bar           . -1)
     (height               . 50)
     (width                . 90)
+    (cursor-type          . bar)
     (alpha                . 95)
+    (tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
 #+end_src
@@ -206,11 +210,10 @@ There are also some general rules I set up manually.
 (tool-bar-mode -1)
 #+end_src
 
-Unfortunately, =linum-mode= doesn't work properly with some
-buffers, so we add it to the hook for programming modes.
+=linum-mode= is too heavy, so we use =display-line-numbers-mode= instead.
 
 #+begin_src emacs-lisp
-(add-hook 'prog-mode-hook 'linum-mode)
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
 #+end_src
 
 ** Keybindings
@@ -236,14 +239,19 @@ mouse variables which we've already set before.
 
 ** Autocompletion
 
+Let's set up autocompletions.
+
 #+begin_src emacs-lisp
-  (setq tab-always-indent 'complete)
-  (add-to-list 'completion-styles 'initials t)
+(setq tab-always-indent 'complete)
+(add-to-list 'completion-styles 'initials t)
 #+end_src
 
 ** Modeline
 
 I use =telephone-line= for that.
+
+(Unfortunately, Org Journal doesn't work fine with it... I still need
+to mitigate the problem, but I'll just disable it for now)
 
 #+begin_src emacs-lisp
   (use-package telephone-line
@@ -257,6 +265,19 @@ I use =telephone-line= for that.
     (telephone-line-mode 1))
 #+end_src
 
+** Ivy
+
+I prefer to use Ivy instead of Helm or Emacs' default minibuffer
+thing.
+
+#+begin_src emacs-lisp
+(use-package ivy
+  :config (progn
+            (ivy-mode 1)
+            (setq ivy-use-virtual-buffers  t
+                  ivy-count-format         "(%d/%d) ")))
+#+end_src
+
 * Language Configurations
 
 Now we create configurations for programming languages.
@@ -265,8 +286,8 @@ Now we create configurations for programming languages.
 Indent-guide is useful for showing guide lines on code.
 
 #+begin_src emacs-lisp
-(use-package indent-guide
-  :config (indent-guide-global-mode))
+;; (use-package indent-guide
+;;   :config (indent-guide-global-mode))
 #+end_src
 
 This should give us nice, highlighted numbers across all programming
@@ -284,11 +305,11 @@ Flycheck and Semantic.
 (use-package flycheck)
 (require 'semantic)
 
-(global-semanticdb-minor-mode        1)
-(global-semantic-idle-scheduler-mode 1)
-(global-semantic-stickyfunc-mode     0)
+;; (global-semanticdb-minor-mode        1)
+;; (global-semantic-idle-scheduler-mode 1)
+;; (global-semantic-stickyfunc-mode     0)
 
-(semantic-mode 1)
+;; (semantic-mode 1)
 #+end_src
 
 Org and Mu4e's compose buffer use =auto-fill-mode=. I like to wrap on
@@ -311,7 +332,18 @@ As a general note, I just disable the prompts for code evaluation on
 Org. You might want to remove this on your end.
 
 #+begin_src emacs-lisp
-(setq org-confirm-babel-evaluate nil)
+(setq-default org-confirm-babel-evaluate nil)
+#+end_src
+
+We also need to make sure our HTML exported files open with the
+browser and whatever.
+
+#+begin_src emacs-lisp
+(setq org-file-apps
+      '((auto-mode . emacs)
+        ("\\.mm\\'" . default)
+        ("\\.x?html?\\'" . "/usr/bin/firefox %s")
+        ("\\.pdf\\'" . "/usr/bin/zathura %s")))
 #+end_src
 
 *** Agenda
@@ -372,24 +404,30 @@ Let's make sure our Org mode indents and wraps around the 80th column
 by using Visual Line Mode. Oh, and we also enable cute bullets.
 
 #+begin_src emacs-lisp
-  (add-hook 'org-mode-hook #'toggle-word-wrap)
-  (add-hook 'org-mode-hook #'org-indent-mode)
-  (add-hook 'org-mode-hook #'turn-on-visual-line-mode)
+(add-hook 'org-mode-hook #'toggle-word-wrap)
+(add-hook 'org-mode-hook #'org-indent-mode)
+(add-hook 'org-mode-hook #'turn-on-visual-line-mode)
 
-  (use-package org-bullets
-    :config (add-hook 'org-mode-hook #'org-bullets-mode))
+(use-package org-bullets
+  :config (add-hook 'org-mode-hook #'org-bullets-mode))
 #+end_src
 
-Let's enforce the 80-column rule with an indicator.
+# Let's enforce the 80-column rule with an indicator.
 
 #+begin_src emacs-lisp
-  (use-package fill-column-indicator
-    :config (progn
-	      (add-hook 'org-mode-hook
-			(lambda ()
-			  (setq fci-rule-width 1)
-			  (setq fci-rule-color "darkblue")))
-	      (add-hook 'org-mode-hook 'turn-on-auto-fill)))
+(use-package fill-column-indicator
+  :config (progn
+            (add-hook 'org-mode-hook
+                      (lambda ()
+                        (setq fci-rule-width 1)
+                        (setq fci-rule-color "darkblue")))
+            (add-hook 'org-mode-hook 'turn-on-auto-fill)))
+#+end_src
+
+Another option is to use =adaptive-wrap=, but I'll leave it off for now.
+
+#+begin_src emacs-lisp
+;; (use-package adaptive-wrap)
 #+end_src
 
 Other nice features are: hiding emphasis markers, prevent editing
@@ -441,23 +479,23 @@ Org journal is useful for keeping up notes on a journal.
 My journal files are kept in a sensitive file.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
-  (use-package org-journal
-    :init
-    (defun org-journal-load-files ()
-      (interactive)
-      (when (not org-journal-loaded)
-	(setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
-	(add-to-list 'org-agenda-files org-journal-dir)
-	(setq org-journal-loaded t)))
-    :config (setq org-journal-loaded nil))
+(load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
+(use-package org-journal
+  :init
+  (defun org-journal-load-files ()
+    (interactive)
+    (when (not org-journal-loaded)
+      (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
+      (add-to-list 'org-agenda-files org-journal-dir)
+      (setq org-journal-loaded t)))
+  :config (setq org-journal-loaded nil))
 
 #+end_src
 
 Anniversaries can be seen by including my diary.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-include-diary t)
+(setq org-agenda-include-diary t)
 #+end_src
 
 *** Trello
@@ -499,18 +537,29 @@ Let's begin by setting up a few things for Babel.
 (use-package ob-go)
 (use-package ess) ;; package for languages such as Julia, R
 (org-babel-do-load-languages 'org-babel-load-languages
-                             '((lisp  . t)
-                               (go    . t)
-                               (shell . t)
-                               (dot   . t)
-                               (js    . t)
-                               (julia . t)
-                               (C     . t)))
+                             '((lisp   . t)
+                               (go     . t)
+                               (shell  . t)
+                               (dot    . t)
+                               (js     . t)
+                               (julia  . t)
+                               (C      . t)
+                               (scheme . t)
+                               (shen   . t)
+                               (prolog . t)
+                               (python . t)))
 
 (mapc (lambda (x)
         (add-to-list 'org-babel-tangle-lang-exts x))
       '(("js"      . "js")
         ("gnu-apl" . "apl")))
+#+end_src
+
+# I'd like that the export process occurs in parallel. Some LaTeX files
+# just end up taking a long time.
+
+#+begin_src emacs-lisp
+;; (setq org-export-in-background t)
 #+end_src
 
 **** HTML
@@ -528,6 +577,7 @@ Configure Htmlize to preferred defaults.
 (require 'ox-latex)
 (unless (boundp 'org-latex-classes)
   (setq org-latex-classes nil))
+
 (add-to-list 'org-latex-classes
 	     '("abntex2"
 	       "\\documentclass{abntex2}
@@ -539,12 +589,17 @@ Configure Htmlize to preferred defaults.
 	       ("\\paragraph{%s}" . "\\paragraph*{%s}")
 	       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
 	       ("\\maketitle" . "\\imprimircapa")))
+
+(add-to-list 'org-latex-classes
+             '("standalone"
+               "\\documentclass{standalone}
+                [NO-DEFAULT-PACKAGES]"))
 #+end_src
 
 I also like to use the plain PDF export.
 
 #+begin_src emacs-lisp
-(setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdf %f"))
+(setq org-latex-pdf-process '("latexmk -shell-escape -bibtex -f -pdfxe -8bit %f"))
 #+end_src
 
 Also, for buffer images to scale and look good, we use this:
@@ -563,15 +618,36 @@ Lisp/ uses highlighting:
 (add-to-list 'org-latex-packages-alist '("" "minted"))
 #+end_src
 
+=inputenc= configuration for Unicode characters.
+
+#+begin_src emacs-lisp
+(setq org-latex-inputenc-alist '(("utf8" . "utf8x")))
+#+end_src
+
+Using =mathletters= from =ucs= also helps a lot.
+
+#+begin_src emacs-lisp
+(add-to-list 'org-latex-default-packages-alist
+             '("mathletters" "ucs" nil))
+#+end_src
+
 **** Reveal.js
 
 Export presentations to Reveal.js.
 
 #+begin_src emacs-lisp
-  (use-package ox-reveal
-    :config (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js@3.8.0/js/reveal.min.js"
-		  org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/"
-	org-reveal-mathjax t))
+(use-package ox-reveal
+  :config (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js@3.9.2/js/reveal.min.js"
+                org-reveal-root "http://cdn.jsdelivr.net/reveal.js@3.9.2/"
+                org-reveal-mathjax t))
+#+end_src
+
+**** Epub
+
+Export Org filex to Epub format.
+
+#+begin_src emacs-lisp
+(use-package ox-epub)
 #+end_src
 
 *** Org Capture and Org Protocol
@@ -675,6 +751,8 @@ I also added support for APL385 Unicode font (which can be found on
 Dyalog APL's page).
 
 #+begin_src emacs-lisp
+(defvar buffer-face-mode-face)
+
 (defun gnu-apl-font-use-freemono ()
   (interactive)
   (setq buffer-face-mode-face '(:family "FreeMono" :height 100))
@@ -682,7 +760,7 @@ Dyalog APL's page).
 
 (defun gnu-apl-font-use-385 ()
   (interactive)
-  (setq buffer-face-mode-face '(:family "APL385 Unicode" :height 150))
+  (setq buffer-face-mode-face '(:family "APL385 Unicode" :height 90))
   (buffer-face-mode))
 
 ;; (add-hook 'gnu-apl-interactive-mode-hook 'gnu-apl-font-use-freemono)
@@ -840,37 +918,47 @@ Configure C/C++ support for my taste. Defaults include indentation
 of width 4 with spaces, K&R style.
 
 #+begin_src emacs-lisp
-  (require 'cc-mode)
+(require 'cc-mode)
 
-  (defun my-c-mode-hook ()
-    (setq c-basic-offset   4
-	  c-default-style  "k&r"
-	  indent-tabs-mode nil)
-    (c-set-offset 'substatement-open 0))
+(defun my-c-mode-hook ()
+  (setq c-basic-offset   4
+        c-default-style  "k&r"
+        indent-tabs-mode nil)
+  (c-set-offset 'substatement-open 0))
 
-  (add-hook 'c++-mode-hook #'my-c-mode-hook)
-  (add-hook 'c-mode-hook   #'my-c-mode-hook)
+(add-hook 'c++-mode-hook #'my-c-mode-hook)
+(add-hook 'c-mode-hook   #'my-c-mode-hook)
 #+end_src
 
-Setup CMake IDE. Notice that we need to have rtags installed
-on the system.
+# Setup CMake IDE. Notice that we need to have rtags installed
+# on the system.
 
 #+begin_src emacs-lisp
-  (use-package rtags)
-  (use-package cmake-ide
-    :config (cmake-ide-setup))
+;; (use-package rtags)
+;; (use-package cmake-ide
+;;     :config (cmake-ide-setup))
 #+end_src
 
-Setup Company C Headers for autocompletion.
+#  Setup Company C Headers for autocompletion.
 
 #+begin_src emacs-lisp
-  (use-package company)
-  (use-package company-c-headers
-    :requires company
-    :init (add-to-list 'company-backends 'company-c-headers))
+;; (use-package company)
+;; (use-package company-c-headers
+;;   :requires company
+;;   :init (add-to-list 'company-backends 'company-c-headers))
 #+end_src
 
-To help with autocompletion, we use semantic, previously configured.
+# To help with autocompletion, we use semantic, previously configured.
+
+To help with autocompletion, we use =irony= and =company-irony=.
+
+#+begin_src emacs-lisp
+(use-package company)
+(use-package company-irony
+  :requires 'company
+  :config
+  (add-to-list 'company-backends 'company-irony))
+#+end_src
 
 ** Forth
 
@@ -882,6 +970,14 @@ Use forth-mode and configure keybindings for evaluating code blocks.
 	      (define-key forth-mode-map (kbd "C-x C-e") #'forth-eval-last-expression)
 	      (define-key forth-mode-map (kbd "C-c C-c") #'forth-eval-region)))
 
+#+end_src
+
+** Futhark
+
+Use futhark-mode for Futhark support.
+
+#+begin_src emacs-lisp
+(use-package futhark-mode)
 #+end_src
 
 ** Go
@@ -918,6 +1014,13 @@ Just make sure we are using intero-mode.
 (use-package julia-mode)
 #+end_src
 
+** Lean
+
+#+begin_src emacs-lisp
+(use-package lean-mode)
+(use-package company-lean)
+#+end_src
+
 ** Lisp
 
 There are many dialects of Lisp! I mostly work with Common Lisp,
@@ -927,7 +1030,7 @@ Scheme, Elisp and Racket.
 Here, we use Roswell to manage our SLIME installation.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name "~/.roswell/helper.el"))
+(load (expand-file-name "~/.roswell/helper.el"))
 #+end_src
 
 Let's also make sure that we have our function which starts SLIME
@@ -970,10 +1073,14 @@ We use Shen's Elisp backend.
 
 *** Clojure
 
-I don't do any Clojure, but when I do, I do it in Emacs.
-
 #+begin_src emacs-lisp
 (use-package clojure-mode)
+#+end_src
+
+**** CIDER
+
+#+begin_src emacs-lisp
+(use-package cider)
 #+end_src
 
 *** Appearance
@@ -1031,6 +1138,55 @@ spaces at once.
         clojure-mode-hook))
 #+end_src
 
+** Unison
+
+#+begin_src emacs-lisp
+(use-package unison-mode)
+#+end_src
+
+** Python
+
+Make sure Python 3 is installed. Also, run these on console:
+
+#+begin_src bash :eval no
+pip install --user --upgrade pip
+pip install --user --upgrade ipython
+pip install --user --upgrade pyzmq
+pip install --user --upgrade jupyter
+#+end_src
+
+We begin by installing Python Mode.
+
+#+begin_src emacs-lisp
+(use-package python-mode
+  :config (progn
+            ;; (setq python-shell-interpreter "ipython"
+            ;;       python-shell-interpreter-args "-i")
+            (setq py-shell-name                  "ipython"
+                  py-which-bufname               "IPython"
+                  py-python-command-args         '(
+                                                   ;;"--gui=wx" "--pylab=wx"
+                                                   "-colors" "Linux")
+            ;;       py-force-py-shell-name-p       t
+            ;;       py-switch-buffers-on-execute-p nil
+            ;;       py-split-window-on-execute     t
+                  py-smart-indentation           t)))
+#+end_src
+
+Now we add the org-mode integration for ipython.
+
+#+begin_src emacs-lisp
+(use-package ob-ipython)
+#+end_src
+
+** Prolog
+
+Use Prolog on Org.
+
+#+begin_src emacs-lisp
+(use-package ob-prolog)
+#+end_src
+
 ** PureScript
 
 We use the PureScript IDE. Make sure PureScript is properly installed.
@@ -1047,6 +1203,99 @@ We use the PureScript IDE. Make sure PureScript is properly installed.
 	    (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation)
 	    (setq psc-ide-use-npm-bin t)))
 
+#+end_src
+
+** OCaml
+
+Must go before ReasonML.
+
+*** Utop
+
+#+begin_src emacs-lisp
+(use-package utop
+  :config
+  (progn
+    (add-to-list 'load-path
+                 (replace-regexp-in-string
+                  "\n" "/share/emacs/site-lisp"
+                  (shell-command-to-string "opam config var prefix")))
+    (autoload 'utop "utop" "Toplevel for OCaml")
+    (setq utop-command "opam config exec -- utop -emacs")))
+#+end_src
+
+** ReasonML
+*** Merlin
+
+#+begin_src emacs-lisp
+(let ((opam-share (ignore-errors (car (process-lines "opam" "config" "var"
+                                                     "share")))))
+  (when (and opam-share (file-directory-p opam-share))
+    ;; Register Merlin
+    (add-to-list 'load-path (expand-file-name "emacs/site-lisp" opam-share))
+    (autoload 'merlin-mode "merlin" nil t nil)
+    ;; Automatically start it in OCaml buffers
+    (add-hook 'tuareg-mode-hook 'merlin-mode t)
+    (add-hook 'caml-mode-hook 'merlin-mode t)
+    ;; Use opam switch to lookup ocamlmerlin binary
+    (setq merlin-command 'opam)))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package merlin)
+#+end_src
+
+*** reason-mode
+
+#+begin_src emacs-lisp
+(use-package reason-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+(defun shell-cmd (cmd)
+  "Returns the stdout output of a shell command or nil if the command returned
+   an error"
+  (car (ignore-errors (apply 'process-lines (split-string cmd)))))
+
+(defun reason-cmd-where (cmd)
+  (let ((where (shell-cmd cmd)))
+    (if (not (string-equal "unknown flag ----where" where))
+        where)))
+
+(let* ((refmt-bin (or (reason-cmd-where "refmt ----where")
+                      (shell-cmd "which refmt")
+                      (shell-cmd "which bsrefmt")))
+       (merlin-bin (or (reason-cmd-where "ocamlmerlin ----where")
+                       (shell-cmd "which ocamlmerlin")))
+       (merlin-base-dir (when merlin-bin
+                          (replace-regexp-in-string "bin/ocamlmerlin$" "" merlin-bin))))
+  ;; Add merlin.el to the emacs load path and tell emacs where to find ocamlmerlin
+  (when merlin-bin
+    (add-to-list 'load-path (concat merlin-base-dir "share/emacs/site-lisp/"))
+    (setq merlin-command merlin-bin))
+
+  (when refmt-bin
+    (setq refmt-command refmt-bin)))
+
+(require 'reason-mode)
+(require 'merlin)
+(add-hook 'reason-mode-hook (lambda ()
+                              (add-hook 'before-save-hook 'refmt-before-save)
+                              (merlin-mode)))
+
+(setq merlin-ac-setup t)
+#+end_src
+
+*** rtop
+
+Depends on OCaml utop integration
+
+#+begin_src emacs-lisp
+(defun rtop-minor-mode (&optional arg)
+  (set (make-local-variable 'utop-command)
+       "opam config exec -- rtop -emacs")
+  (utop-minor-mode arg))
+
+(add-hook 'reason-mode-hook #'rtop-minor-mode)
 #+end_src
 
 ** Rust
@@ -1167,9 +1416,12 @@ As for =npm=, I just install =npm-mode= and leave it globally enabled --
 what the heck, I use Emacs as a daemon anyway. I'll disable if
 anything seems weird.
 
+(So yeah, it became weird. Having an "npm" mode around is a very
+strange thing. I'll just disable it)
+
 #+begin_src emacs-lisp
-(use-package npm-mode
-  :config (npm-global-mode))
+;; (use-package npm-mode
+;;   :config (npm-global-mode))
 #+end_src
 
 ** Config
@@ -1232,9 +1484,10 @@ I also like Neotree on the F8 key.
 ** PDF Tools
 
 #+begin_src emacs-lisp
-  (use-package pdf-tools
-    :config (progn (pdf-tools-install)
-		   (add-hook 'pdf-tools-enabled-hook 'pdf-view-midnight-minor-mode)))
+(use-package pdf-tools
+  :config (progn (pdf-tools-install)
+                 (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+                 (add-hook 'pdf-view-mode-hook 'pdf-view-fit-width-to-window)))
 #+end_src
 
 ** Mastodon
@@ -1564,5 +1817,23 @@ Dashboard is the default startup page for my Emacs configuration.
 		       )))))
 
 
+#+end_src
+
+** StumpWM
+
+#+begin_src emacs-lisp
+(use-package stumpwm-mode)
+#+end_src
+
+** Database GUI
+
+Use =M-x edbi:open-db-viewer= to open a DB connection.
+
+For MySQL for example, you might want to use a data source such as
+
+~dbi:mysql:host=localhost;dbname=my-db;charset=utf8mb4~
+
+#+begin_src emacs-lisp
+(use-package edbi)
 #+end_src
 
