@@ -188,6 +188,18 @@ I use kaolin-bubblegum as my default theme.
   :config (load-theme 'kaolin-bubblegum t))
 #+end_src
 
+I'll also add some extra stuff for setting up themes.
+
+#+begin_src emacs-lisp
+(defun theme-dark ()
+  "Sets the dark theme"
+  (load-theme 'kaolin-bubblegum t))
+
+(defun theme-light ()
+  "Sets the light theme"
+  (load-theme 'kaolin-light t))
+#+end_src
+
 There are also some general rules I set up manually.
 
 #+begin_src emacs-lisp
@@ -214,6 +226,21 @@ There are also some general rules I set up manually.
 
 #+begin_src emacs-lisp
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+#+end_src
+
+It is also useful to pin certain windows sometimes.
+
+#+begin_src emacs-lisp
+(defun toggle-window-dedicated ()
+  "Toggle whether the current active window is dedicated or not"
+  (interactive)
+  (message
+   (if (let (window (get-buffer-window (current-buffer)))
+         (set-window-dedicated-p window 
+                                 (not (window-dedicated-p window))))
+       "Window '%s' is dedicated"
+     "Window '%s' is normal")
+   (current-buffer)))
 #+end_src
 
 ** Keybindings
@@ -547,7 +574,8 @@ Let's begin by setting up a few things for Babel.
                                (scheme . t)
                                (shen   . t)
                                (prolog . t)
-                               (python . t)))
+                               (python . t)
+                               (ein    . t)))
 
 (mapc (lambda (x)
         (add-to-list 'org-babel-tangle-lang-exts x))
@@ -1155,28 +1183,28 @@ pip install --user --upgrade pyzmq
 pip install --user --upgrade jupyter
 #+end_src
 
-We begin by installing Python Mode.
+We begin by installing Python Mode. We also enable Flycheck.
 
 #+begin_src emacs-lisp
 (use-package python-mode
   :config (progn
-            ;; (setq python-shell-interpreter "ipython"
-            ;;       python-shell-interpreter-args "-i")
             (setq py-shell-name                  "ipython"
                   py-which-bufname               "IPython"
-                  py-python-command-args         '(
-                                                   ;;"--gui=wx" "--pylab=wx"
-                                                   "-colors" "Linux")
-            ;;       py-force-py-shell-name-p       t
-            ;;       py-switch-buffers-on-execute-p nil
-            ;;       py-split-window-on-execute     t
-                  py-smart-indentation           t)))
+                  py-python-command-args         '("-colors" "Linux")
+                  py-smart-indentation           t)
+            (add-hook 'python-mode-hook #'flycheck-mode)))
 #+end_src
 
 Now we add the org-mode integration for ipython.
 
 #+begin_src emacs-lisp
 (use-package ob-ipython)
+#+end_src
+
+And org-mode integration for Emacs IPython Notebook (ein).
+
+#+begin_src emacs-lisp
+(use-package ein)
 #+end_src
 
 ** Prolog
