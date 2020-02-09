@@ -193,10 +193,12 @@ I'll also add some extra stuff for setting up themes.
 #+begin_src emacs-lisp
 (defun theme-dark ()
   "Sets the dark theme"
+  (interactive)
   (load-theme 'kaolin-bubblegum t))
 
 (defun theme-light ()
   "Sets the light theme"
+  (interactive)
   (load-theme 'kaolin-light t))
 #+end_src
 
@@ -226,21 +228,6 @@ There are also some general rules I set up manually.
 
 #+begin_src emacs-lisp
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-#+end_src
-
-It is also useful to pin certain windows sometimes.
-
-#+begin_src emacs-lisp
-(defun toggle-window-dedicated ()
-  "Toggle whether the current active window is dedicated or not"
-  (interactive)
-  (message
-   (if (let (window (get-buffer-window (current-buffer)))
-         (set-window-dedicated-p window 
-                                 (not (window-dedicated-p window))))
-       "Window '%s' is dedicated"
-     "Window '%s' is normal")
-   (current-buffer)))
 #+end_src
 
 ** Keybindings
@@ -298,11 +285,106 @@ I prefer to use Ivy instead of Helm or Emacs' default minibuffer
 thing.
 
 #+begin_src emacs-lisp
+(use-package counsel)
+
 (use-package ivy
   :config (progn
             (ivy-mode 1)
             (setq ivy-use-virtual-buffers  t
                   ivy-count-format         "(%d/%d) ")))
+#+end_src
+
+*** Ivy-rich
+
+It is also interesting to use =ivy-rich= for a... richer... Ivy
+experience.
+
+#+begin_src emacs-lisp
+(use-package ivy-rich
+  :config (progn
+            (ivy-rich-mode 1)
+            (setcdr (assq t ivy-format-functions-alist)
+                    #'ivy-format-function-line)
+            ;; Function for buffer icons
+            (defun ivy-rich-switch-buffer-icon (candidate)
+              (with-current-buffer
+                  (get-buffer candidate)
+                (let ((icon (all-the-icons-icon-for-mode major-mode)))
+                  (if (symbolp icon)
+                      (all-the-icons-icon-for-mode 'fundamental-mode)
+                    icon))))
+            (setq ivy-rich--display-transformers-list
+                  '(ivy-switch-buffer
+                    (:columns
+                     (;; Buffer icon
+                      (ivy-rich-switch-buffer-icon (:width 2))
+                      ;; return the candidate itself
+                      (ivy-rich-candidate (:width 30))
+                      ;; return the buffer size
+                      (ivy-rich-switch-buffer-size (:width 7))
+                      ;; return the buffer indicators
+                      (ivy-rich-switch-buffer-indicators
+                       (:width 4 :face error :align right))
+                      ;; return the major mode info
+                      (ivy-rich-switch-buffer-major-mode
+                       (:width 12 :face warning))
+                      ;; return project name using `projectile'
+                      (ivy-rich-switch-buffer-project
+                       (:width 15 :face success))
+                      ;; return file path relative to project root
+                      ;; or `default-directory' if project is nil
+                      (ivy-rich-switch-buffer-path
+                       (:width (lambda (x)
+                                 (ivy-rich-switch-buffer-shorten-path
+                                  x
+                                  (ivy-rich-minibuffer-width 0.3))))))
+                     :predicate
+                     (lambda (cand) (get-buffer cand)))
+                    counsel-M-x
+                    ;; (:columns
+                    ;;  ;; the original transformer
+                    ;;  ((counsel-M-x-transformer (:width 40))
+                    ;;   (ivy-rich-counsel-function-docstring
+                    ;;    ;; return the docstring of the command
+                    ;;    (:face font-lock-doc-face))))
+                    ;; Two-column mode
+                    (:columns
+                     ((counsel-M-x-transformer (:width 40))
+                      (ivy-rich-counsel-function-docstring
+                       (:face font-lock-doc-face))))
+                    counsel-describe-function
+                    (:columns
+                     ;; the original transformer
+                     ((counsel-describe-function-transformer (:width 40))
+                      ;; return the docstring of the function
+                      (ivy-rich-counsel-function-docstring
+                       (:face font-lock-doc-face))))
+                    counsel-describe-variable
+                    (:columns
+                     ;; the original transformer
+                     ((counsel-describe-variable-transformer (:width 40))
+                      (ivy-rich-counsel-variable-docstring
+                       ;; return the docstring of the variable
+                       (:face font-lock-doc-face))))
+                    counsel-recentf
+                    (:columns
+                     ;; return the candidate itself
+                     ((ivy-rich-candidate (:width 0.8))
+                      (ivy-rich-file-last-modified-time
+                       ;; return the last modified time of the file
+                       (:face font-lock-comment-face))))))))
+#+end_src
+
+*** Ivy-posframe
+
+Floaty stuff is floaty.
+
+#+begin_src emacs-lisp
+(use-package ivy-posframe
+  :config (progn
+            (setq ivy-posframe-display-functions-alist
+                  '((t . ivy-posframe-display-at-frame-top-center)))
+            (ivy-posframe-mode 1)))
 #+end_src
 
 * Language Configurations
