@@ -40,11 +40,10 @@ vital, and can be replaced/removed.
 - =rustup=, =rustc=, =cargo= and =racer= (for Rust)
 - =TexLive= and =rubber= (for AUCTeX, Org LaTeX export, LaTeX, etc)
 - =zsh= (for Ansi-Term)
-- =wakatime= (for WakaTime)
 - =unzip= and =libxml2= support on Emacs (for nov.el)
 - =mu4e=, =isync/mbsync=, =gpg2=, =awk= (for Mu4e)
 - =git= (for Magit)
-- =Spotify=, =dbus= (for Spotify)
+# - =Spotify=, =dbus= (for Spotify)
 - =w3m= (for w3m browser)
 - =clojure= and =leiningen= (for Clojure)
 - =shen= (Common Lisp build, for Shen)
@@ -54,6 +53,8 @@ vital, and can be replaced/removed.
 - =Tern.js= (JavaScript, Node.js support; can be installed with =npm=)
 - =Perl= (for =edbi=)
 - =Python 3=, =ipython=, =pip= for Python stuff
+- =Fira Code= font for ligatures (when using it -- see Ligatures)
+- =eslint= for =flymake-eslint=
 
 ** Screenshots
 
@@ -98,9 +99,9 @@ This block removes the /"functions might not be defined at runtime"/
 warnings. However it never showed up on my configuration, so I'll just
 leave it commented.
 
-#+begin_src emacs-lisp
-  ;;(eval-when-compile
-  ;;  (setq use-package-expand-minimally byte-compile-current-file))
+#+begin_src emacs-lisp :tangle no
+;; (eval-when-compile
+;;   (setq use-package-expand-minimally byte-compile-current-file))
 #+end_src
 
 ** Packaging
@@ -132,6 +133,27 @@ it.
 (setq use-package-always-ensure t)
 #+end_src
 
+*** COMMENT Straight.el
+
+Some packages use =straight.el= along with =use-package=. Let's enable
+it... Or not. Because it fucks up DBus, for some reason.
+
+#+begin_src emacs-lisp :tangle no
+(defvar bootstrap-version)
+
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+	(url-retrieve-synchronously
+	 "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+	 'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
+
 ** Custom
 
 The custom file is a thing I never plan to touch.
@@ -158,9 +180,102 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "Fixed-10")
 ;;(defconst my-default-font "Dina-10")
 ;;(defconst my-default-font "FreeMono-10")
-;;(defconst my-default-font "Iosevka-9")
+;;(defconst my-default-font "Iosevka-10")
+(defconst my-default-font "Fira Code-10")
 ;;(defconst my-default-font "Terminus-10")
-(defconst my-default-font "Hack-10")
+;;(defconst my-default-font "Hack-10")
+#+end_src
+
+*** Fira Code and Font Ligatures
+
+If you are using Fira Code, it is possible to enable font ligatures on
+Emacs.
+
+First off, it is important to install the [[https://github.com/tonsky/FiraCode/files/412440/FiraCode-Regular-Symbol.zip][Fira Code Symbol]] font to
+enable the ligatures, along with Fira Code itself.
+
+After that, we define a minor =fira-code-mode= which enables ligatures
+on a buffer. This is somewhat based on Hasklig.
+
+#+begin_src emacs-lisp
+(defun fira-code-mode--make-alist (list)
+  "Generate prettify-symbols alist from LIST."
+  (let ((idx -1))
+    (mapcar
+     (lambda (s)
+       (setq idx (1+ idx))
+       (let* ((code (+ #Xe100 idx))
+              (width (string-width s))
+              (prefix ())
+              (suffix '(?\s (Br . Br)))
+              (n 1))
+         (while (< n width)
+           (setq prefix (append prefix '(?\s (Br . Bl))))
+           (setq n (1+ n)))
+         (cons s (append prefix suffix (list (decode-char 'ucs code))))))
+     list)))
+
+(defconst fira-code-mode--ligatures
+  '("www" "**" "***" "**/" "*>" "*/" "\\\\" "\\\\\\"
+    "{-" "[]" "::" ":::" ":=" "!!" "!=" "!==" "-}"
+    "--" "---" "-->" "->" "->>" "-<" "-<<" "-~"
+    "#{" "#[" "##" "###" "####" "#(" "#?" "#_" "#_("
+    ".-" ".=" ".." "..<" "..." "?=" "??" ";;" "/*"
+    "/**" "/=" "/==" "/>" "//" "///" "&&" "||" "||="
+    "|=" "|>" "^=" "$>" "++" "+++" "+>" "=:=" "=="
+    "===" "==>" "=>" "=>>" "<=" "=<<" "=/=" ">-" ">="
+    ">=>" ">>" ">>-" ">>=" ">>>" "<*" "<*>" "<|" "<|>"
+    "<$" "<$>" "<!--" "<-" "<--" "<->" "<+" "<+>" "<="
+    "<==" "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<" "<~"
+    "<~~" "</" "</>" "~@" "~-" "~=" "~>" "~~" "~~>" "%%"
+    "x" ":" "+" "+" "*"))
+
+(defvar fira-code-mode--old-prettify-alist)
+
+(defun fira-code-mode--enable ()
+  "Enable Fira Code ligatures in current buffer."
+  (setq-local fira-code-mode--old-prettify-alist prettify-symbols-alist)
+  (setq-local prettify-symbols-alist (append (fira-code-mode--make-alist fira-code-mode--ligatures) fira-code-mode--old-prettify-alist))
+  (prettify-symbols-mode t))
+
+(defun fira-code-mode--disable ()
+  "Disable Fira Code ligatures in current buffer."
+  (setq-local prettify-symbols-alist fira-code-mode--old-prettify-alist)
+  (prettify-symbols-mode -1))
+
+(define-minor-mode fira-code-mode
+  "Fira Code ligatures minor mode"
+  :lighter " Fira Code"
+  (setq-local prettify-symbols-unprettify-at-point 'right-edge)
+  (if fira-code-mode
+      (fira-code-mode--enable)
+    (fira-code-mode--disable)))
+
+(defun fira-code-mode--setup ()
+  "Setup Fira Code Symbols"
+  (set-fontset-font t '(#Xe100 . #Xe16f) "Fira Code Symbol"))
+
+(provide 'fira-code-mode)
+#+end_src
+
+The following extra function is by myself! It enables Fira Code
+ligatures if and only if the current font is Fira Code.
+
+#+begin_src emacs-lisp
+(defun enable-fira-code-ligatures ()
+  (interactive)
+  (when (string= my-default-font "Fira Code-10")
+    (fira-code-mode)))
+#+end_src
+
+*** Emoji support
+
+Emojify helps showing emoji inside Emacs. Hopefully we don't need
+Symbola font.
+
+#+begin_src emacs-lisp
+(use-package emojify
+  :hook ((after-init-hook . global-emojify-mode)))
 #+end_src
 
 ** Visual
@@ -175,17 +290,20 @@ set at standalone or daemonized Emacs.
     (height               . 50)
     (width                . 90)
     (cursor-type          . bar)
-    (alpha                . 95)
+    (alpha                . 85)
     (tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
 #+end_src
 
-I use kaolin-bubblegum as my default theme.
+I use kaolin-bubblegum as my default theme, and kaolin-light when I
+want extra stuff.
 
 #+begin_src emacs-lisp
-(use-package kaolin-themes
-  :config (load-theme 'kaolin-bubblegum t))
+;; Kaolin
+;;(defconst my-default-theme-dark  'kaolin-bubblegum)
+(defconst my-default-theme-dark  'kaolin-aurora)
+(defconst my-default-theme-light 'kaolin-light)
 #+end_src
 
 I'll also add some extra stuff for setting up themes.
@@ -194,12 +312,19 @@ I'll also add some extra stuff for setting up themes.
 (defun theme-dark ()
   "Sets the dark theme"
   (interactive)
-  (load-theme 'kaolin-bubblegum t))
+  (load-theme my-default-theme-dark t))
 
 (defun theme-light ()
   "Sets the light theme"
   (interactive)
-  (load-theme 'kaolin-light t))
+  (load-theme my-default-theme-light t))
+#+end_src
+
+Now let's install and set them.
+
+#+begin_src emacs-lisp
+(use-package kaolin-themes
+  :config (theme-dark))
 #+end_src
 
 There are also some general rules I set up manually.
@@ -300,20 +425,21 @@ It is also interesting to use =ivy-rich= for a... richer... Ivy
 experience.
 
 #+begin_src emacs-lisp
+;; Function for buffer icons
+(defun ivy-rich-switch-buffer-icon (candidate)
+  (with-current-buffer
+      (get-buffer candidate)
+    (let ((icon (all-the-icons-icon-for-mode major-mode)))
+      (if (symbolp icon)
+          (all-the-icons-icon-for-mode 'fundamental-mode)
+        icon))))
+
 (use-package ivy-rich
   :config (progn
             (ivy-rich-mode 1)
             (setcdr (assq t ivy-format-functions-alist)
                     #'ivy-format-function-line)
-            ;; Function for buffer icons
-            (defun ivy-rich-switch-buffer-icon (candidate)
-              (with-current-buffer
-                  (get-buffer candidate)
-                (let ((icon (all-the-icons-icon-for-mode major-mode)))
-                  (if (symbolp icon)
-                      (all-the-icons-icon-for-mode 'fundamental-mode)
-                    icon))))
-            (setq ivy-rich--display-transformers-list
+            (setq ivy-rich-display-transformers-list
                   '(ivy-switch-buffer
                     (:columns
                      (;; Buffer icon
@@ -321,7 +447,7 @@ experience.
                       ;; return the candidate itself
                       (ivy-rich-candidate (:width 30))
                       ;; return the buffer size
-                      (ivy-rich-switch-buffer-size (:width 7))
+                      ;;(ivy-rich-switch-buffer-size (:width 7))
                       ;; return the buffer indicators
                       (ivy-rich-switch-buffer-indicators
                        (:width 4 :face error :align right))
@@ -329,8 +455,8 @@ experience.
                       (ivy-rich-switch-buffer-major-mode
                        (:width 12 :face warning))
                       ;; return project name using `projectile'
-                      (ivy-rich-switch-buffer-project
-                       (:width 15 :face success))
+                      ;; (ivy-rich-switch-buffer-project
+                      ;;  (:width 15 :face success))
                       ;; return file path relative to project root
                       ;; or `default-directory' if project is nil
                       (ivy-rich-switch-buffer-path
@@ -383,7 +509,10 @@ Floaty stuff is floaty.
 (use-package ivy-posframe
   :config (progn
             (setq ivy-posframe-display-functions-alist
-                  '((t . ivy-posframe-display-at-frame-top-center)))
+                  '((t . ivy-posframe-display-at-frame-center))
+                  ivy-posframe-parameters
+                  '((left-fringe   . 8)
+                    (right-fringe  . 8)))
             (ivy-posframe-mode 1)))
 #+end_src
 
@@ -461,43 +590,54 @@ Prepare Portuguese-BR translations for some things, plus some custom
 commands.
 
 #+begin_src emacs-lisp
-  (require 'org-agenda)
-  (setq org-agenda-include-diary t
-	calendar-week-start-day 0
-	calendar-day-name-array ["Domingo" "Segunda" "Terça" "Quarta"
-				 "Quinta" "Sexta" "Sábado"]
-	calendar-month-name-array ["Janeiro" "Fevereiro" "Março" "Abril"
-				   "Maio" "Junho" "Julho" "Agosto"
-				   "Setembro" "Outubro" "Novembro" "Dezembro"])
+(require 'org-agenda)
+(setq org-agenda-include-diary t
+      calendar-week-start-day 0
+      calendar-day-name-array ["Domingo" "Segunda" "Terça" "Quarta"
+                               "Quinta" "Sexta" "Sábado"]
+      calendar-month-name-array ["Janeiro" "Fevereiro" "Março" "Abril"
+                                 "Maio" "Junho" "Julho" "Agosto"
+                                 "Setembro" "Outubro" "Novembro" "Dezembro"])
 
 
-  (add-to-list 'org-agenda-custom-commands
-	       '("Y" "Agenda anual de aniversários e feriados" agenda "Visão Anual"
-		 ((org-agenda-span 365)
-		  (org-agenda-filter-by-category 'Aniversário)
-		  (org-agenda-time-grid nil))))
-  (add-to-list 'org-agenda-custom-commands
-	       '("1" "Agenda mensal" agenda "Visão Mensal"
-		 ((org-agenda-span 31)
-		  (org-agenda-time-grid nil))))
-  (add-to-list 'org-agenda-custom-commands
-	       '("7" "Agenda dos próximos sete dias" agenda "Visão de Sete Dias"
-		 ((org-agenda-span 7)
-		  (org-agenda-time-grid nil))))
+(add-to-list 'org-agenda-custom-commands
+             '("Y" "Agenda anual de aniversários e feriados" agenda "Visão Anual"
+               ((org-agenda-span 365)
+                (org-agenda-filter-by-category 'Aniversário)
+                (org-agenda-time-grid nil))))
+(add-to-list 'org-agenda-custom-commands
+             '("1" "Agenda mensal" agenda "Visão Mensal"
+               ((org-agenda-span 31)
+                (org-agenda-time-grid nil))))
+(add-to-list 'org-agenda-custom-commands
+             '("7" "Agenda dos próximos sete dias" agenda "Visão de Sete Dias"
+               ((org-agenda-span 7)
+                (org-agenda-time-grid nil))))
 #+end_src
 
 There are also some Brazillian holidays we can use.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "elisp/brazil-holidays.el")))
-  (setq calendar-holidays holiday-brazil-all)
+(load (expand-file-name (concat user-emacs-directory "elisp/brazil-holidays.el")))
+(setq calendar-holidays holiday-brazil-all)
 #+end_src
 
 As for my agenda itself, it is managed through the variable org-agenda-files, which
 is defined in a sensitive file.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
+(load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
+#+end_src
+
+It is a good idea to remove the org-agenda-files (and diary file) from
+=recentf=.
+
+#+begin_src emacs-lisp
+(require 'recentf)
+(mapc (lambda (file)
+        (add-to-list 'recentf-exclude
+                     (expand-file-name file)))
+      `(,@org-agenda-files ,diary-file))
 #+end_src
 
 Since I sync my agenda files across the web, it is very important that
@@ -589,6 +729,9 @@ My journal files are kept in a sensitive file.
 
 #+begin_src emacs-lisp
 (load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
+
+(defvar org-journal-loaded nil)
+
 (use-package org-journal
   :init
   (defun org-journal-load-files ()
@@ -832,6 +975,23 @@ I use Epresentation which makes Emacs fullscreen in org.
 
 #+begin_src emacs-lisp
 (use-package epresent)
+#+end_src
+
+*** COMMENT Org-roam
+
+#+begin_src emacs-lisp :tangle no
+(use-package org-roam
+  :hook (after-init . org-roam-mode)
+  :straight (:host github :repo "jethrokuan/org-roam" :branch "develop")
+;;  :custom (org-roam-directory "/path/to/org-files/")
+  :config (load (expand-file-name (concat user-emacs-directory "sensitive/org-roam.el")))
+  :bind (:map org-roam-mode-map
+              (("C-c n l" . org-roam)
+               ("C-c n f" . org-roam-find-file)
+               ("C-c n b" . org-roam-switch-to-buffer)
+               ("C-c n g" . org-roam-show-graph))
+              :map org-mode-map
+              (("C-c n i" . org-roam-insert))))
 #+end_src
 
 ** APL
@@ -1098,15 +1258,16 @@ We also set indentation to tabs of width 4.
 We also rely on flycheck for Go.
 
 #+begin_src emacs-lisp
-  (use-package go-mode
-    :config (progn
-	      (use-package godoctor)
-	      (add-hook 'go-mode-hook #'company-mode)
-	      (add-hook 'go-mode-hook  #'flycheck-mode)
-	      (add-hook 'go-mode-hook (lambda ()
-					(setq indent-tabs-mode 1
-					      tab-width        4)))
-	      (add-to-list 'company-backends 'company-go)))
+(use-package go-mode
+  :config (progn
+            (use-package godoctor)
+            (add-hook 'go-mode-hook #'company-mode)
+            (add-hook 'go-mode-hook  #'flycheck-mode)
+            (add-hook 'go-mode-hook (lambda ()
+                                      (setq indent-tabs-mode 1
+                                            tab-width        4)))
+            ;; (add-to-list 'company-backends 'company-go)
+            ))
 #+end_src
 
 ** Haskell
@@ -1258,7 +1419,7 @@ spaces at once.
 
 Make sure Python 3 is installed. Also, run these on console:
 
-#+begin_src bash :eval no
+#+begin_src bash :eval no :tangle no
 pip install --user --upgrade pip
 pip install --user --upgrade ipython
 pip install --user --upgrade pyzmq
@@ -1488,9 +1649,38 @@ easier parens/javascript editing.
 	      (use-package js2-mode
 		:config (progn
 			  (setq js2-highlight-level 3)
-			  (use-package flow-js2-mode
-			    :config (add-hook 'js2-mode-hook 'flow-minor-enable-automatically))
-			  (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))))))
+                          ;;(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+                          ))
+              
+              (use-package flow-js2-mode
+                :config (add-hook 'js2-mode-hook 'flow-minor-enable-automatically))))
+#+end_src
+
+rjsx-mode works on top of js2-mode for parsing JSX for extra spicyness.
+
+#+begin_src emacs-lisp
+(use-package rjsx-mode
+  :config (progn
+            (setq js2-highlight-level 3)
+            (add-hook 'js2-mode-hook 'flow-minor-enable-automatically)
+            (add-hook 'js2-mode-hook 'enable-fira-code-ligatures)
+            (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
+            (add-to-list 'auto-mode-alist '("\\.jsx\\'" . rjsx-mode))))
+#+end_src
+
+Now we add support for Dockerfiles.
+
+#+begin_src emacs-lisp
+(use-package dockerfile-mode)
+#+end_src
+
+I also like to use Eslint with flymake when dealing with JavaScript
+stuff, that is, when Eslint is being used. For that, make sure =eslint=
+is installed globally.
+
+#+begin_src emacs-lisp
+(use-package flymake-eslint
+  :config (add-hook 'js2-mode-hook (lambda () (flymake-eslint-enable))))
 #+end_src
 
 *** Node.js
@@ -1542,6 +1732,77 @@ We use a mode for editing Linux config files.
 (use-package config-general-mode)
 #+end_src
 
+* Language Server Provider (LSP)
+
+LSP is a language server protocol support for Emacs, which works on
+multiple types of code.
+
+** Default configuration
+
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :init (setq lsp-keymap-prefix "C-c l") ; I prefer this prefix
+  ;; The following modes are supposed to be installed.
+  :hook ((c-mode . lsp)
+         (c++-mode . lsp)
+         (java-mode . lsp)
+         (lsp-mode . lsp-enable-which-key-integration))
+  :commands lsp)
+
+;; Optional config
+(use-package lsp-ui :commands lsp-ui-mode)
+(use-package company-lsp :commands company-lsp)
+
+;; Ivy stuff
+(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+(use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+#+end_src
+
+** Performance adjustments
+
+Adjust GC cons threshold, which is low by default.
+
+#+begin_src emacs-lisp
+(setq gc-cons-threshold 100000000)
+#+end_src
+
+Increase amount of data which Emacs reads from the process.
+
+(Changed to a defvar instead of =setq= because Emacs complained. Is this
+deprecated?)
+
+#+begin_src emacs-lisp
+(defvar read-process-output-max (* 1024 1024)) ; 1 megabyte
+#+end_src
+
+** Java support
+
+We install Java support and setup LSP for Java mode.
+
+#+begin_src emacs-lisp
+(use-package lsp-java)
+#+end_src
+
+After first run, lsp-java will detect and download Eclipse JDT
+Language Server automatically.
+
+* Debug Adapter Protocol (DAP)
+
+DAP is a wire protocol for communication between the Emacs client and
+the Debug Server, similar to LSP.
+
+** Default configuration
+
+#+begin_src emacs-lisp
+(use-package dap-mode
+  :after lsp-mode
+  :config (progn
+            (dap-mode t)
+            (dap-ui-mode t)
+            (dap-tooltip-mode 1)
+            (tooltip-mode 1)))
+#+end_src
+
 * Miscellaneous
 
 Now we'll configure some useful tools.
@@ -1571,7 +1832,22 @@ Bind the F7 key to opening a new buffer with ZSH.
 I like to use Projectile for managing my projects.
 
 #+begin_src emacs-lisp
-  (use-package projectile)
+(use-package projectile
+  :config (progn (projectile-mode +1)
+                 (define-key projectile-mode-map
+                   (kbd "C-c p") 'projectile-command-map)
+                 (add-to-list
+                  'projectile-globally-ignored-directories
+                  "node_modules")))
+#+end_src
+
+*** Counsel-projectile
+
+This is for Projectile usage with Ivy/Counsel.
+
+#+begin_src emacs-lisp
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
 #+end_src
 
 ** Neotree
@@ -1623,16 +1899,16 @@ relies on an oauth2 package)
   ;;  :init (setq alert-default-style 'notifier))
 #+end_src
 
-** WakaTime
+** COMMENT WakaTime
 
-I like to track my time with WakaTime. Gives me useful stats.
+I used to track my time with WakaTime. Gave me useful stats.
 WakaTime uses an API key which is stored on a sensible file.
 
 #+begin_src emacs-lisp
-  (use-package wakatime-mode
-    :config (progn
-              (load (expand-file-name (concat user-emacs-directory "sensitive/wakatime.el")))
-              (global-wakatime-mode)))
+;; (use-package wakatime-mode
+;;   :config (progn
+;;             (load (expand-file-name (concat user-emacs-directory "sensitive/wakatime.el")))
+;;             (global-wakatime-mode)))
 #+end_src
 
 ** nov.el
@@ -1667,15 +1943,15 @@ Personal stuff should be in =sensitive/mail.el=.
 
   (use-package mu4e-alert
     :config (progn
-	      (mu4e-alert-set-default-style 'libnotify)
-	      (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
-	      (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
+              (mu4e-alert-set-default-style 'libnotify)
+              (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+              (add-hook 'after-init-hook #'mu4e-alert-enable-mode-line-display)))
 
   (setq mail-user-agent                   'mu4e-user-agent
-	message-send-mail-function        'smtpmail-send-it
-	message-kill-buffer-on-exit       t
-	mu4e-change-filenames-when-moving t
-	mu4e-view-show-images             t)
+        message-send-mail-function        'smtpmail-send-it
+        message-kill-buffer-on-exit       t
+        mu4e-change-filenames-when-moving t
+        mu4e-view-show-images             t)
 
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
@@ -1729,11 +2005,13 @@ Group protonmail
 Channel inbox
 #+end_example
 
+Oh, and Bridge can be a real bitch when handling your passwords, since
+it requires =pass= or =gnome-keyring=; I use the latter. Also, make sure
+you have DBus working (yeah, I know, I know. DBus sucks).
+
 And here is how I defined my Mu4e context for ProtonMail. I have
 omitted the sensitive parts, but this should give you a heads-up on
 how to setup the =mu4e-contexts= variable.
-
-
 
 #+begin_src emacs-lisp :tangle no
 ;; This code snippet SHOULD NOT BE TANGLED with the rest of the
@@ -1742,29 +2020,29 @@ how to setup the =mu4e-contexts= variable.
 
 (setq mu4e-compose-signature "My Awesome Signature"
       mu4e-maildir-shortcuts '(("/INBOX"   . ?i)
-			       ("/Sent"    . ?s)
-			       ("/Drafts"  . ?d)
-			       ("/Archive" . ?a)
-			       ("/Trash"   . ?t)))
+                               ("/Sent"    . ?s)
+                               ("/Drafts"  . ?d)
+                               ("/Archive" . ?a)
+                               ("/Trash"   . ?t)))
 
 (setq mu4e-contexts
       `(,(make-mu4e-context
           :name "Protonmail"
           :vars
-	  `((mu4e-maildir          . ,(expand-file-name "/path/to/my/mail/box"))
-	    (user-mail-address     . "mymail@example.com")
-	    (user-full-name        . "My Name")
-	    (mu4e-attachment-dir   . "/path/to/attachment/download/dir")
-	    (mu4e-trash-folder     . "/Trash")
-	    (mu4e-refile-folder    . "/Archive")
-	    (mu4e-drafts-folder    . "/Drafts")
-	    (mu4e-sent-folder      . "/Sent")
-	    (mu4e-get-mail-command . "mbsync protonmail")
-	    (smtpmail-smtp-user    . "mymail@example.com")
-	    (smtpmail-stream-type  . starttls)
-	    (smtpmail-auth-credentials . "/path/to/authinfo.gpg")
-	    (smtpmail-smtp-server  . "127.0.0.1")
-	    (smtpmail-smtp-service . PROTONMAIL-BRIDGE-GIVEN-SMTP-PORT)))))
+          `((mu4e-maildir          . ,(expand-file-name "/path/to/my/mail/box"))
+            (user-mail-address     . "mymail@example.com")
+            (user-full-name        . "My Name")
+            (mu4e-attachment-dir   . "/path/to/attachment/download/dir")
+            (mu4e-trash-folder     . "/Trash")
+            (mu4e-refile-folder    . "/Archive")
+            (mu4e-drafts-folder    . "/Drafts")
+            (mu4e-sent-folder      . "/Sent")
+            (mu4e-get-mail-command . "mbsync protonmail")
+            (smtpmail-smtp-user    . "mymail@example.com")
+            (smtpmail-stream-type  . starttls)
+            (smtpmail-auth-credentials . "/path/to/authinfo.gpg")
+            (smtpmail-smtp-server  . "127.0.0.1")
+            (smtpmail-smtp-service . PROTONMAIL-BRIDGE-GIVEN-SMTP-PORT)))))
 #+end_src
 
 ** Elfeed
@@ -1795,13 +2073,16 @@ Magit is the awesome tool for Git usage.
   (use-package magit)
 #+end_src
 
-** Helm-Spotify
+** COMMENT Ivy-Spotify
 
-Controlling Spotify from Emacs/Dashboard (via dbus) uses a Helm interface.
+Controlling Spotify from Emacs/Dashboard (via dbus) uses an Ivy interface.
 
 #+begin_src emacs-lisp
-(use-package helm-spotify-plus)
+;;(use-package ivy-spotify) ; unavailable!
 #+end_src
+
+Then set the variables =counsel-spotify-client-id= and
+=counsel-spotify-client-secret=.
 
 If Emacs cannot access =dbus= (or Spotify is not recognized by =dbus=), it
 may be interesting to have a script to invoke Emacs as follows (which
@@ -1816,12 +2097,12 @@ export DBUS_SESSION_BUS_PID
 emacs --daemon &
 #+end_src
 
-** Helm-lobsters
+** Ivy-lobsters
 
 Show Lobste.rs' top stories using Help.
 
 #+begin_src emacs-lisp
-(use-package helm-lobsters)
+(use-package ivy-lobsters)
 #+end_src
 
 ** w3m
@@ -1836,97 +2117,101 @@ For browsing inside Emacs, I usually use w3m.
 Dashboard is the default startup page for my Emacs configuration.
 
 #+begin_src emacs-lisp
-  (use-package hackernews)
-  (use-package dashboard
-    :requires (all-the-icons hackernews)
-    :config (progn
-	      (dashboard-setup-startup-hook)
-	      (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
-		    dashboard-banner-logo-title "Welcome to GNU Emacs."
-		    dashboard-startup-banner    'logo
-		    dashboard-center-content    t
-		    dashboard-set-heading-icons t
-		    dashboard-set-file-icons    t
-		    dashboard-set-navigator     t
-		    dashboard-set-init-info     t
-		    dashboard-set-navigator     t
-		    
-		    ;;; Items
-		    dashboard-items '((bookmarks . 5)
-				      (projects  . 5)
-				      (agenda))
+(use-package hackernews)
+(use-package dashboard
+  :requires (all-the-icons hackernews)
+  :config (progn
+            (dashboard-setup-startup-hook)
+            (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
+                  dashboard-banner-logo-title "Welcome to GNU Emacs."
+                  dashboard-startup-banner    'logo
+                  dashboard-center-content    t
+                  dashboard-set-heading-icons t
+                  dashboard-set-file-icons    t
+                  dashboard-set-navigator     t
+                  dashboard-set-init-info     t
+                  dashboard-set-navigator     t
+                  
+                    ;;; Items
+                  dashboard-items '((agenda)
+                                    ;;(recents . 5)
+                                    ;;(bookmarks . 5)
+                                    (projects  . 5)
+                                    )
 
-		    ;;; Footer
-		    dashboard-footer-icon
-		    (all-the-icons-octicon "dashboard"
-					   :height 1.1
-					   :v-adjust -0.05
-					   :face 'font-lock-keyword-face)
-		    
-		    ;;; Buttons
-		    dashboard-navigator-buttons
-		    ;; Line 1
-		    `((("★" "Blog" "Alchemist's Hideout"
-			(lambda (&rest _)
-			  (browse-url "http://alchemist.sdf.org")))
-		       (,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
-			"GitHub"
-			"Go to GitHub profile"
-			(lambda (&rest _)
-			  (browse-url "https://github.com/luksamuk")))
-		       (,(all-the-icons-faicon "gitlab" :height 1.1 :v-adjust 0.0)
-			"GitLab"
-			"Go to Gitlab profile"
-			(lambda (&rest _)
-			  (browse-url "https://gitlab.com/luksamuk")))
-		       (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
-			"Instagram" "Go to Instagram"
-			(lambda (&rest _)
-			  (browse-url "https://instagram.com")))
-		       )
-		      ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
-			"Lobste.rs" "Open Lobste.rs client"
-			(lambda (&rest _)
-			  (helm-lobsters)))
-		       (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
-			"Hacker News" "Open Hacker News client"
-			(lambda (&rest _)
-			  (hackernews)))
-		       (,(all-the-icons-faicon "spotify" :height 1.1 :v-adjust 0.0)
-			"Spotify" "Open Spotify client"
-			(lambda (&rest _)
-			  (helm-spotify-plus)))
-		       )
-		      ;; Line 2
-		      ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
-			"Mastodon" "Open Mastodon client"
-			(lambda (&rest _)
-			  (mastodon)))
-		       (,(all-the-icons-faicon "envelope" :height 1.1 :v-adjust 0.0)
-			"Mail" "Open Mu4e mail client"
-			(lambda (&rest _)
-			  (mu4e)))
-		       (,(all-the-icons-faicon "rss" :height 1.1 :v-adjust 0.0)
-			"RSS" "Open Elfeed RSS client"
-			(lambda (&rest _)
-			  (elfeed)))
-		       ;; (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
-		       ;; 	"Slack" "Open Slack client"
-		       ;; 	(lambda (&rest _)
-		       ;; 	  (slack-start)))
-		       )
-		      ;; Line 3
-		      ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
-			"" "Browse website using w3m"
-			(lambda (&rest _)
-			  (w3m)))
-		       (,(all-the-icons-faicon "refresh" :height 1.1 :v-adjust 0.0)
-			"" "Refresh Dashboard"
-			(lambda (&rest _)
-			  (dashboard-refresh-buffer)))
-		       )))))
-
-
+                    ;;; Footer
+                  dashboard-footer-icon
+                  (all-the-icons-octicon "dashboard"
+                                         :height 1.1
+                                         :v-adjust -0.05
+                                         :face 'font-lock-keyword-face)
+                  
+                    ;;; Buttons
+                  dashboard-navigator-buttons
+                  ;; Line 1
+                  `((("★" "Blog" "Alchemist's Hideout"
+                      (lambda (&rest _)
+                        (browse-url "http://alchemist.sdf.org")))
+                     (,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
+                      "GitHub"
+                      "Go to GitHub profile"
+                      (lambda (&rest _)
+                        (browse-url "https://github.com/luksamuk")))
+                     (,(all-the-icons-faicon "gitlab" :height 1.1 :v-adjust 0.0)
+                      "GitLab"
+                      "Go to Gitlab profile"
+                      (lambda (&rest _)
+                        (browse-url "https://gitlab.com/luksamuk")))
+                     (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
+                      "Instagram" "Go to Instagram"
+                      (lambda (&rest _)
+                        (browse-url "https://instagram.com")))
+                     )
+                    ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
+                      "Lobste.rs" "Open Lobste.rs client"
+                      (lambda (&rest _)
+                        (ivy-lobsters)))
+                     (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
+                      "Hacker News" "Open Hacker News client"
+                      (lambda (&rest _)
+                        (hackernews)))
+                     ;; (,(all-the-icons-faicon "spotify" :height 1.1 :v-adjust 0.0)
+                     ;;  "Spotify" "Open Spotify client"
+                     ;;  (lambda (&rest _)
+                     ;;    (helm-spotify-plus)))
+                     )
+                    ;; Line 2
+                    ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
+                      "Mastodon" "Open Mastodon client"
+                      (lambda (&rest _)
+                        (mastodon)))
+                     (,(all-the-icons-faicon "envelope" :height 1.1 :v-adjust 0.0)
+                      "Mail" "Open Mu4e mail client"
+                      (lambda (&rest _)
+                        (mu4e)))
+                     (,(all-the-icons-faicon "rss" :height 1.1 :v-adjust 0.0)
+                      "RSS" "Open Elfeed RSS client"
+                      (lambda (&rest _)
+                        (elfeed)))
+                     ;; (,(all-the-icons-faicon "slack" :height 1.1 :v-adjust 0.0)
+                     ;;         "Slack" "Open Slack client"
+                     ;;         (lambda (&rest _)
+                     ;;           (slack-start)))
+                     (,(all-the-icons-fileicon "telegram" :height 1.1 :v-adjust 0.0)
+                      "Telegram" "Open Telegram client"
+                      (lambda (&rest _)
+                        (telega nil)))
+                     )
+                    ;; Line 3
+                    ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
+                      "" "Browse website using w3m"
+                      (lambda (&rest _)
+                        (w3m)))
+                     (,(all-the-icons-faicon "refresh" :height 1.1 :v-adjust 0.0)
+                      "" "Refresh Dashboard"
+                      (lambda (&rest _)
+                        (dashboard-refresh-buffer)))
+                     )))))
 #+end_src
 
 ** StumpWM
@@ -1945,5 +2230,34 @@ For MySQL for example, you might want to use a data source such as
 
 #+begin_src emacs-lisp
 (use-package edbi)
+#+end_src
+
+** Paradox
+
+#+begin_src emacs-lisp
+(use-package paradox
+  :config (paradox-enable))
+#+end_src
+
+** Telega
+
+Telega is a telegram client for Emacs. See more info at [[https://github.com/zevlg/telega.el][its
+repository]].
+
+#+begin_src emacs-lisp
+(use-package telega
+  :config (progn
+            ;;(telega-notifications-mode 1) ; DBus notifications
+            (setq telega-use-images t))
+  :hook ((telega-chat-mode-hook
+          .
+          (lambda () ; completions
+            (set (make-local-variable 'company-backends)
+                 (append '(telega-company-emoji
+                           telega-company-username
+                           telega-company-hashtag)
+                         (when (telega-chat-bot-p telega-chatbuf--chat)
+                           '(telega-company-botcmd))))
+            (company-mode 1)))))
 #+end_src
 
