@@ -115,10 +115,13 @@ Also, somehow, =elpa= is inaccessible over HTTPS.
 			 ("marmalade" . "https://marmalade-repo.org/packages/")
 			 ;;("melpa-stable" . "https://stable.melpa.org/packages/")
 			 ("melpa" . "https://melpa.org/packages/")
-			 ("org" . "https://orgmode.org/elpa/")))
+			 ("org" . "https://orgmode.org/elpa/")
+                     ("ox-odt" . "https://kjambunathan.github.io/elpa/")))
 
 (package-initialize)
 #+end_src
+
+*** use-package
 
 Now we install =use-package=. All subsequent packages are managed by
 it.
@@ -133,12 +136,14 @@ it.
 (setq use-package-always-ensure t)
 #+end_src
 
-*** COMMENT Straight.el
+*** Straight.el
 
 Some packages use =straight.el= along with =use-package=. Let's enable
-it... Or not. Because it fucks up DBus, for some reason.
+it.
 
-#+begin_src emacs-lisp :tangle no
+Also, *do not use Emacs-GTK on Void Linux*.
+
+#+begin_src emacs-lisp
 (defvar bootstrap-version)
 
 (let ((bootstrap-file
@@ -154,14 +159,47 @@ it... Or not. Because it fucks up DBus, for some reason.
   (load bootstrap-file nil 'nomessage))
 #+end_src
 
+*** El-Get
+
+Some packages use el-get for managing external stuff.
+
+Also, el-get uses dbus for notifications, so we better deactivate it.
+
+#+begin_src emacs-lisp
+(use-package el-get
+  :config (progn
+            (remove-hook 'el-get-post-install-hooks
+                         'el-get-post-install-notification)
+            (remove-hook 'el-get-post-remove-hooks
+                         'el-get-post-remove-notification)))
+#+end_src
+
+** Sensible files
+
+To fetch sensible files in the =sensitive/= subdir, we create a helper
+function.
+
+#+begin_src emacs-lisp
+(defun sensible-file (filename)
+  (expand-file-name
+   (concat user-emacs-directory "sensitive/" filename)))
+#+end_src
+
+And to load the file:
+
+#+begin_src emacs-lisp
+(defun load-sensible-file (filename)
+  (load (sensible-file filename)))
+#+end_src
+
 ** Custom
 
 The custom file is a thing I never plan to touch.
 Let's move it out of the way.
 
 #+begin_src emacs-lisp
-  (setq custom-file (expand-file-name (concat user-emacs-directory "sensitive/custom.el")))
-  (load custom-file)
+(setq custom-file (sensible-file "custom.el"))
+(load custom-file)
 #+end_src
 
 * Appearance
@@ -184,6 +222,40 @@ There are many fonts I usually choose. I just uncomment as needed.
 (defconst my-default-font "Fira Code-10")
 ;;(defconst my-default-font "Terminus-10")
 ;;(defconst my-default-font "Hack-10")
+
+(defconst my-default-font-mono "Fira Code")
+(defconst my-default-font-variable "Libre Baskerville")
+#+end_src
+
+The following code will enable fixed-pitch for tables, code blocks and
+etcetera in Org Mode. Originally found [[https://stackoverflow.com/questions/3758139/variable-pitch-for-org-mode-fixed-pitch-for-tables][here]].
+
+#+begin_src emacs-lisp
+(defun my-adjoin-to-list-or-symbol (element list-or-symbol)
+  (let ((list (if (not (listp list-or-symbol))
+                  (list list-or-symbol)
+                list-or-symbol)))
+    (require 'cl-lib)
+    (cl-adjoin element list)))
+;; Before, it was an (eval-after-load "org"
+(add-hook 'org-mode-hook
+          (lambda ()
+            (mapc (lambda (face)
+                    (set-face-attribute
+                     face nil
+                     :inherit
+                     (my-adjoin-to-list-or-symbol
+                      'fixed-pitch
+                      (face-attribute face :inherit))))
+             (list 'org-code 'org-block 'org-table))))
+#+end_src
+
+And the following code is good for Poet theme, to be set later.
+
+#+begin_src emacs-lisp
+(set-face-attribute 'default nil :family my-default-font-mono :height 90)
+(set-face-attribute 'fixed-pitch nil :family my-default-font-mono :height 90)
+(set-face-attribute 'variable-pitch nil :family my-default-font-variable :height 110)
 #+end_src
 
 *** Fira Code and Font Ligatures
@@ -290,7 +362,7 @@ set at standalone or daemonized Emacs.
     (height               . 50)
     (width                . 90)
     (cursor-type          . bar)
-    (alpha                . 85)
+    (alpha                . 65)
     (tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
@@ -300,10 +372,21 @@ I use kaolin-bubblegum as my default theme, and kaolin-light when I
 want extra stuff.
 
 #+begin_src emacs-lisp
-;; Kaolin
-;;(defconst my-default-theme-dark  'kaolin-bubblegum)
-(defconst my-default-theme-dark  'kaolin-aurora)
-(defconst my-default-theme-light 'kaolin-light)
+;; Dark themes
+(defconst my-default-theme-dark
+  ;;'kaolin-bubblegum
+  ;;'kaolin-aurora
+  ;;'modus-vivendi
+  'poet-dark
+  ;;'dracula
+  )
+
+;; White themes
+(defconst my-default-theme-light
+  ;;'kaolin-light
+  ;;'modus-operandi
+  'poet
+  )
 #+end_src
 
 I'll also add some extra stuff for setting up themes.
@@ -323,8 +406,14 @@ I'll also add some extra stuff for setting up themes.
 Now let's install and set them.
 
 #+begin_src emacs-lisp
-(use-package kaolin-themes
-  :config (theme-dark))
+(use-package kaolin-themes)
+;;(use-package modus-operandi-theme)
+;;(use-package modus-vivendi-theme)
+(use-package poet-theme)
+;;(use-package dracula-theme)
+
+(theme-dark)
+;;(theme-light)
 #+end_src
 
 There are also some general rules I set up manually.
@@ -387,7 +476,7 @@ Let's set up autocompletions.
 
 ** Modeline
 
-I use =telephone-line= for that.
+*** Telephone-line
 
 (Unfortunately, Org Journal doesn't work fine with it... I still need
 to mitigate the problem, but I'll just disable it for now)
@@ -402,6 +491,15 @@ to mitigate the problem, but I'll just disable it for now)
 		    telephone-line-height                    24
 		    telephone-line-evil-use-short-tag        t))
     (telephone-line-mode 1))
+#+end_src
+
+*** COMMENT Mini-modeline
+
+Simplistic and small modeline for my needs, specially on EXWM.
+
+#+begin_src emacs-lisp
+(use-package mini-modeline
+  :config (mini-modeline-mode t))
 #+end_src
 
 ** Ivy
@@ -501,9 +599,10 @@ experience.
                        (:face font-lock-comment-face))))))))
 #+end_src
 
-*** Ivy-posframe
+*** COMMENT Ivy-posframe
 
-Floaty stuff is floaty.
+Floaty stuff is floaty. But floaty stuff can only be floaty when EXWM
+is not being used.
 
 #+begin_src emacs-lisp
 (use-package ivy-posframe
@@ -514,6 +613,75 @@ Floaty stuff is floaty.
                   '((left-fringe   . 8)
                     (right-fringe  . 8)))
             (ivy-posframe-mode 1)))
+#+end_src
+
+*** Ivy-Bibtex
+
+This tool is very useful for managing Bibtex entries, including notes
+and associated PDF files.
+
+Associated file =sensitive/helm-bibtex.el= defines the variable
+=bibtex-completion-bibliography=, which is a list of paths to actual
+Bibtex files for bibliography. It also defines
+=bibtex-completion-library-path=.
+
+#+begin_src emacs-lisp
+(use-package ivy-bibtex
+  :config (progn (load-sensible-file "helm-bibtex.el")
+                 (setq bibtex-completion-pdf-field "File")))
+#+end_src
+
+*** Ivy-YouTube
+
+This queries YouTube stuff from Emacs and plays it on the browser.
+
+#+begin_src emacs-lisp
+(use-package ivy-youtube)
+#+end_src
+
+** COMMENT Perspective.el
+
+[[https://github.com/nex3/perspective-el][perspective.el]] provides multiple named workspaces, akin to multiple
+desktops in some WMs.
+
+This is very useful for certain projects. Use =C-x x= as prefix.
+
+#+begin_src emacs-lisp
+(use-package perspective
+  :config (persp-mode))
+#+end_src
+
+Command cheatsheet:
+
+|---------+---------------------+-------------------------------------|
+| Command | Name                | Meaning                             |
+|---------+---------------------+-------------------------------------|
+| s       | ~persp-switch~        | Query or create perspective         |
+| k       | ~persp-remove-buffer~ | Remove buffer from perspective      |
+| c       | ~persp-kill~          | Kill perspective                    |
+| r       | ~persp-rename~        | Rename current perspective          |
+| a       | ~persp-add-buffer~    | Add open buffer to perspective      |
+| A       | ~persp-set-buffer~    | Add open buffer, remove others      |
+| i       | ~persp-import~        | Import perspective from other frame |
+| n/right | ~persp-next~          | Next perspective                    |
+| p/left  | ~persp-prev~          | Previous perspective                |
+| C-s     | ~persp-state-save~    | Save all perspectives to file       |
+| C-l     | ~persp-state-load~    | Load all perspectives from file     |
+|---------+---------------------+-------------------------------------|
+
+* Flycheck
+
+Flycheck is cool and works well with JavaScript ESLint, for instance.
+
+#+begin_src emacs-lisp
+(use-package flycheck
+  :config (progn
+            (add-hook 'after-init-hook #'global-flycheck-mode)
+            ;; Disable JSHint and json-jsonlist
+            (setq-default flycheck-disabled-checkers
+                          (append flycheck-disabled-checkers
+                                  '(javascript-jshint
+                                    json-jsonlist)))))
 #+end_src
 
 * Language Configurations
@@ -581,7 +749,8 @@ browser and whatever.
       '((auto-mode . emacs)
         ("\\.mm\\'" . default)
         ("\\.x?html?\\'" . "/usr/bin/firefox %s")
-        ("\\.pdf\\'" . "/usr/bin/zathura %s")))
+        ;;("\\.pdf\\'" . "/usr/bin/zathura %s")
+))
 #+end_src
 
 *** Agenda
@@ -626,7 +795,7 @@ As for my agenda itself, it is managed through the variable org-agenda-files, wh
 is defined in a sensitive file.
 
 #+begin_src emacs-lisp
-(load (expand-file-name (concat user-emacs-directory "sensitive/agenda.el")))
+(load-sensible-file "agenda.el")
 #+end_src
 
 It is a good idea to remove the org-agenda-files (and diary file) from
@@ -656,9 +825,14 @@ by using Visual Line Mode. Oh, and we also enable cute bullets.
 (add-hook 'org-mode-hook #'toggle-word-wrap)
 (add-hook 'org-mode-hook #'org-indent-mode)
 (add-hook 'org-mode-hook #'turn-on-visual-line-mode)
+#+end_src
 
-(use-package org-bullets
-  :config (add-hook 'org-mode-hook #'org-bullets-mode))
+I was using =org-bullets= to make things look cute, but it turns out
+that =org-superstar= is way cooler.
+
+#+begin_src emacs-lisp
+(use-package org-superstar
+  :hook (org-mode . org-superstar-mode))
 #+end_src
 
 # Let's enforce the 80-column rule with an indicator.
@@ -693,6 +867,20 @@ org-babel checks before evaluation, support shift select.
       org-support-shift-select         'always)
 #+end_src
 
+Another interesting thing to have is centered text and a /variable
+pitch/ on Org files. This allows non-monospace fonts on buffers and
+centered things.
+
+#+begin_src emacs-lisp
+(use-package olivetti
+  :config (setq-default olivetti-body-width 80))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (variable-pitch-mode 1)
+            (olivetti-mode 1)))
+#+end_src
+
 *** Alert
 
 Org-alert uses libnotify to create notifications for the calendar.
@@ -720,34 +908,6 @@ Calfw is my default calendar tool. I bind it to F6 key.
 			      (lambda ()
 				(interactive)
 				(cfw:open-org-calendar)))))
-#+end_src
-
-*** Journal
-
-Org journal is useful for keeping up notes on a journal.
-My journal files are kept in a sensitive file.
-
-#+begin_src emacs-lisp
-(load (expand-file-name (concat user-emacs-directory "sensitive/journal.el")))
-
-(defvar org-journal-loaded nil)
-
-(use-package org-journal
-  :init
-  (defun org-journal-load-files ()
-    (interactive)
-    (when (not org-journal-loaded)
-      (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
-      (add-to-list 'org-agenda-files org-journal-dir)
-      (setq org-journal-loaded t)))
-  :config (setq org-journal-loaded nil))
-
-#+end_src
-
-Anniversaries can be seen by including my diary.
-
-#+begin_src emacs-lisp
-(setq org-agenda-include-diary t)
 #+end_src
 
 *** Trello
@@ -911,28 +1071,29 @@ extension for browsers.
 Org protocol file location is stored in a sensitive file.
 
 #+begin_src emacs-lisp
-  (require 'org-protocol)
-  (require 'org-capture)
-  (defun sqbrackets->rndbrackets (string)
-    (concat (mapcar #'(lambda (c)
-	  (cond ((equal c ?\[) ?\()
-		((equal c ?\]) ?\))
-		(t c)))
-      string)))
+(require 'org-protocol)
+(require 'org-capture)
+(defun sqbrackets->rndbrackets (string)
+  (concat (mapcar #'(lambda (c)
+                      (cond ((equal c ?\[) ?\()
+                            ((equal c ?\]) ?\))
+                            (t c)))
+                  string)))
 
-  (load (expand-file-name (concat user-emacs-directory "sensitive/org-protocol.el")))
 
-  (setq org-capture-templates
-    `(("p"
-       "Protocol" entry (file+headline ,org-capture-file "Inbox")
-       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
-		"#+begin_quote\n"
-		"%i\n"
-		"#+end_quote\n\n"
-		"Acesso em: %U\n\n"))
-      ("L" "Protocol Link" entry (file+headline ,org-capture-file "Inbox")
-       ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
-		"Acesso em: %U\n\n"))))
+(load-sensible-file "org-protocol.el")
+
+(setq org-capture-templates
+      `(("p"
+         "Protocol" entry (file+headline ,org-capture-file "Inbox")
+         ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
+                  "#+begin_quote\n"
+                  "%i\n"
+                  "#+end_quote\n\n"
+                  "Acesso em: %U\n\n"))
+        ("L" "Protocol Link" entry (file+headline ,org-capture-file "Inbox")
+         ,(concat "* [[%:link][%(sqbrackets->rndbrackets \"%:description\")]]\n"
+                  "Acesso em: %U\n\n"))))
 #+end_src
 
 Here is an example of file, which you should store at, say,
@@ -956,10 +1117,10 @@ Bibliography location is stored on a sensitive file.
 #+begin_src emacs-lisp
   (use-package org-ref
     :config (progn
-              (load (expand-file-name (concat user-emacs-directory "sensitive/org-ref.el"))))
+              (load-sensible-file "org-ref.el")
               (require 'org-ref-pdf)
               (require 'org-ref-bibtex)
-              (require 'org-ref-url-utils))
+              (require 'org-ref-url-utils)))
 #+end_src
 
 I also need a different citation type to conform with ABNT rules. This
@@ -977,14 +1138,26 @@ I use Epresentation which makes Emacs fullscreen in org.
 (use-package epresent)
 #+end_src
 
-*** COMMENT Org-roam
+*** Org-noter
 
-#+begin_src emacs-lisp :tangle no
+Org-noter is a tool for writing notes in Org for PDFs, EPUB, DVI, PS,
+etc. See the documentation [[https://github.com/weirdNox/org-noter][here]].
+
+#+begin_src emacs-lisp
+(use-package org-noter)
+#+end_src
+
+*** Org-roam
+
+The variable =org-roam-directory= is determined in =sensitive/org-roam.el=.
+
+#+begin_src emacs-lisp
+(defconst personal-keybindings '())
+
 (use-package org-roam
   :hook (after-init . org-roam-mode)
   :straight (:host github :repo "jethrokuan/org-roam" :branch "develop")
-;;  :custom (org-roam-directory "/path/to/org-files/")
-  :config (load (expand-file-name (concat user-emacs-directory "sensitive/org-roam.el")))
+  :config (load-sensible-file "org-roam.el")
   :bind (:map org-roam-mode-map
               (("C-c n l" . org-roam)
                ("C-c n f" . org-roam-find-file)
@@ -992,6 +1165,59 @@ I use Epresentation which makes Emacs fullscreen in org.
                ("C-c n g" . org-roam-show-graph))
               :map org-mode-map
               (("C-c n i" . org-roam-insert))))
+#+end_src
+
+**** Deft
+
+Since I'm using Deft exclusively for =org-roam= stuff, I'll put it here.
+It'll provide a nice interface for browsing and filtering notes.
+
+#+begin_src emacs-lisp
+(use-package deft
+  :after org-roam
+  :bind
+  ("C-c n d" . deft)
+  :custom
+  (deft-recursive t)
+  (deft-use-filter-string-for-filename t)
+  (deft-default-extension "org")
+  (deft-directory org-roam-directory))
+#+end_src
+
+*** Org-journal
+
+Org-journal is useful for keeping up notes on a journal.
+My journal files are kept in a sensible file =sensitive/journal.el=.
+
+#+begin_src emacs-lisp
+(load-sensible-file "journal.el")
+
+(defvar org-journal-loaded nil)
+
+(use-package org-journal
+  :init
+  (defun org-journal-load-files ()
+    (interactive)
+    (when (not org-journal-loaded)
+      (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]$")
+      (add-to-list 'org-agenda-files org-journal-dir)
+      (setq org-journal-loaded t)))
+  :config (setq org-journal-loaded nil))
+
+#+end_src
+
+Anniversaries can be seen by including my diary.
+
+#+begin_src emacs-lisp
+(setq org-agenda-include-diary t)
+#+end_src
+
+*** Ox-ODT
+
+This improves the ODT exporter for Org mode.
+
+#+begin_src emacs-lisp
+(use-package ox-odt)
 #+end_src
 
 ** APL
@@ -1592,23 +1818,24 @@ racer via company for autocompletions.
 
 ** TeX
 
-Use latex-preview-pane for comfortable editing.
+I used to use latex-preview-pane for comfortable editing, but not
+anymore...
 
-#+begin_src emacs-lisp
-  (use-package latex-preview-pane
-    :config
-    (when (display-graphic-p)
-      (latex-preview-pane-enable)))
+#+begin_src emacs-lisp :tangle no
+;; (use-package latex-preview-pane
+;;   :config
+;;   (when (display-graphic-p)
+;;     (latex-preview-pane-enable)))
 #+end_src
 
 To compile the current file, we resort to Rubber, an external tool.
 
 #+begin_src emacs-lisp
-  (defun rubber-compile-file ()
-    (interactive)
-    (shell-command
-     (concat "rubber -d " buffer-file-name))
-    (message "Finished LaTeX compilation."))
+(defun rubber-compile-file ()
+  (interactive)
+  (shell-command
+   (concat "rubber -d " buffer-file-name))
+  (message "Finished LaTeX compilation."))
 #+end_src
 
 It is also interesting to have pretty symbols for our LaTeX files.
@@ -1674,13 +1901,157 @@ Now we add support for Dockerfiles.
 (use-package dockerfile-mode)
 #+end_src
 
-I also like to use Eslint with flymake when dealing with JavaScript
-stuff, that is, when Eslint is being used. For that, make sure =eslint=
-is installed globally.
+I also like to use ESLint with Flycheck when dealing with JavaScript
+stuff, that is, when ESLint is being used. Everything here is
+partially taken from [[http://codewinds.com/blog/2015-04-02-emacs-flycheck-eslint-jsx.html][this website]].
+
+|---------+---------------------------|
+| Binding | Effect                    |
+|---------+---------------------------|
+| =C-c ! l= | List of errors in buffer. |
+| =C-c ! n= | Next error                |
+| =C-c ! p= | Previous error            |
+|---------+---------------------------|
+
+For that, make sure that the packages
+
+- =eslint=
+- =eslint-config-airbnb-bundle=
+- =prettier=
+- =eslint-plugin-prettier=
+- =eslint-config-prettier=
+- =eslint-plugin-react=
+
+are installed globally (via =npm= or =yarn=). I am going to enable it to
+all JS-associated modes which are installed.
 
 #+begin_src emacs-lisp
-(use-package flymake-eslint
-  :config (add-hook 'js2-mode-hook (lambda () (flymake-eslint-enable))))
+(mapc (lambda (mode)
+        (flycheck-add-mode 'javascript-eslint mode))
+      '(web-mode js2-mode rjsx-mode))
+#+end_src
+
+Finally, if a local =node_modules= exist, we should use it.
+
+#+begin_src emacs-lisp
+(defun my-use-eslint-from-node-modules ()
+  (let* ((root (locate-dominating-file
+                (or (buffer-file-name) default-directory)
+                "node_modules"))
+         (eslint (and root
+                      (expand-file-name
+                       "node_modules/eslint/bin/eslint.js"
+                       root))))
+    (when (and eslint (file-executable-p eslint))
+      (setq-local flycheck-javascript-eslint-executable eslint))))
+
+(add-hook 'flycheck-mode-hook #'my-use-eslint-from-node-modules)
+#+end_src
+
+Everything is set-up for my config; the last thing to do is fix syntax
+on web-mode. Let's do it.
+
+#+begin_src emacs-lisp
+(defadvice web-mode-highlight-part (around tweak-jsx activate)
+  (if (equal web-mode-content-type "jsx")
+      (let ((web-mode-enable-part-face nil))
+        ad-do-it)
+    ad-do-it))
+#+end_src
+
+**** ESLint configuration
+
+This is my =~/.eslintrc=. This configuration also assumes that you are
+using =sucrase= with your current setup.
+
+#+begin_src json
+{
+    "env": {
+        es6: true,
+        node: true,
+    },
+    "extends": [
+        'airbnb-base',
+        'prettier',
+    ],
+    "plugins": [
+        'prettier',
+        'react',
+    ],
+    "globals": {
+        Atomics: 'readonly',
+        SharedArrayBuffer: 'readonly',
+    },
+    "parserOptions": {
+        ecmaVersion: 2018,
+        sourceType: 'module',
+    },
+    "rules": {
+        "prettier/prettier": "error",
+        "prettier/tabWidth": 4,
+        "indent": ["error", 4],
+        "class-methods-use-this": "off",
+	"no-console": "off",
+        "no-param-reassign": "off",
+        "camelcase": "off",
+        "no-unused-vars": ["error", { "argsIgnorePattern": "next" }],
+        "react/jsx-no-undef": 1,
+        "react/jsx-uses-react": 1,
+        "react/jsx-uses-vars": 1,
+    },
+}
+#+end_src
+
+If needed be, one can also create a project local file =.eslintrc.js=
+with the same configuration, like this:
+
+#+begin_src js
+module.exports = {
+    env: {
+        es6: true,
+        node: true,
+    },
+    extends: [
+        'airbnb-base',
+        'prettier',
+    ],
+    plugins: [
+        'prettier',
+        'react',
+    ],
+    globals: {
+        Atomics: 'readonly',
+        SharedArrayBuffer: 'readonly',
+    },
+    parserOptions: {
+        ecmaVersion: 2018,
+        sourceType: 'module',
+    },
+    rules: {
+        "prettier/prettier": "error",
+        "prettier/tabWidth": 4,
+        "indent": ["error", 4],
+        "class-methods-use-this": "off",
+        "no-param-reassign": "off",
+        "camelcase": "off",
+        "no-unused-vars": ["error", { "argsIgnorePattern": "next" }],
+        "react/jsx-no-undef": 1,
+        "react/jsx-uses-react": 1,
+        "react/jsx-uses-vars": 1,
+    },
+};
+#+end_src
+
+It is also important to add the following =.prettierrc= to your home
+path and your project path.
+
+#+begin_src json
+{
+    "singleQuote":   true,
+    "trailingComma": "es5",
+    "tabWidth":      4,
+    "useTabs":       false,
+}
 #+end_src
 
 *** Node.js
@@ -1814,17 +2185,32 @@ Now we'll configure some useful tools.
     :config (add-hook 'after-init-hook 'global-company-mode))
 #+end_src
 
-** Ansi-Term
+** COMMENT Ansi-Term
 
 Bind the F7 key to opening a new buffer with ZSH.
 
 #+begin_src emacs-lisp
-  (global-set-key [f7]
-		  (lambda ()
-		    (interactive)
-		    (split-window-sensibly)
-		    (other-window 1)
-		    (ansi-term "/bin/zsh")))
+(global-set-key [f7]
+                (lambda ()
+                  (interactive)
+                  (split-window-sensibly)
+                  (other-window 1)
+                  (ansi-term "/bin/zsh")))
+#+end_src
+
+** VTerm
+
+A fully-fledged terminal emulator inside Emacs, using libvterm.
+
+#+begin_src emacs-lisp
+(use-package vterm
+  :config (setq vterm-kill-buffer-on-exit t))
+#+end_src
+
+F7 key opens a new terminal buffer using VTerm.
+
+#+begin_src emacs-lisp
+(global-set-key [f7] 'vterm)
 #+end_src
 
 ** Projectile
@@ -1872,8 +2258,9 @@ I also like Neotree on the F8 key.
 #+begin_src emacs-lisp
 (use-package pdf-tools
   :config (progn (pdf-tools-install)
-                 (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
-                 (add-hook 'pdf-view-mode-hook 'pdf-view-fit-width-to-window)))
+                 ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+                 (add-hook 'pdf-view-mode-hook 'pdf-view-dark-minor-mode)
+                 (add-hook 'pdf-view-mode-hook 'pdf-view-fit-height-to-window)))
 #+end_src
 
 ** Mastodon
@@ -1882,21 +2269,35 @@ I like to access Mastodon from Emacs. The link to my instance is stored
 in a sensitive file.
 
 #+begin_src emacs-lisp
-  (use-package mastodon
-    :config
-    (load (expand-file-name (concat user-emacs-directory "sensitive/mastodon.el"))))
+(use-package mastodon
+  :config (load-sensible-file "mastodon.el"))
 #+end_src
 
 ** Slack
 
-Same goes for Slack. (Unfortunately, Slack is defective for now, as it
-relies on an oauth2 package)
+Configuring Slack client.
+
+Sensible stuff goes into =sensitive/slack.el=.
 
 #+begin_src emacs-lisp
-  ;;(use-package slack)
-  ;;(use-package alert
-  ;;  :commands (alert)
-  ;;  :init (setq alert-default-style 'notifier))
+(use-package slack
+  :commands (slack-start)
+  :init
+  (setq slack-buffer-emojify      t
+        slack-prefer-current-team t)
+  :config (load-sensible-file "slack.el"))
+
+(el-get-bundle yuya373/helm-slack)
+(require 'helm-slack)
+(global-set-key (kbd "C-c n s") #'helm-slack)
+#+end_src
+
+We use the =alert= package for notifications.
+
+#+begin_src emacs-lisp
+(use-package alert
+  :commands (alert)
+  :init (setq alert-default-style 'notifier))
 #+end_src
 
 ** COMMENT WakaTime
@@ -1905,10 +2306,10 @@ I used to track my time with WakaTime. Gave me useful stats.
 WakaTime uses an API key which is stored on a sensible file.
 
 #+begin_src emacs-lisp
-;; (use-package wakatime-mode
-;;   :config (progn
-;;             (load (expand-file-name (concat user-emacs-directory "sensitive/wakatime.el")))
-;;             (global-wakatime-mode)))
+(use-package wakatime-mode
+  :config (progn
+            (load-sensible-file "wakatime.el")
+            (global-wakatime-mode)))
 #+end_src
 
 ** nov.el
@@ -1956,7 +2357,7 @@ Personal stuff should be in =sensitive/mail.el=.
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
 
-  (load (expand-file-name (concat user-emacs-directory "sensitive/mail.el"))))
+  (load-sensible-file "mail.el"))
 #+end_src
 
 Let's make sure that mu4e messages wrap on column 80, just like Org. I
@@ -2051,18 +2452,25 @@ Elfeed is an RSS/Atom feed reader. The location of the Elfeed file is
 kept in a sensitive file.
 
 #+begin_src emacs-lisp
-  (load (expand-file-name (concat user-emacs-directory "sensitive/elfeed.el")))
-  (use-package elfeed-org)
-  (use-package elfeed
-    :requires elfeed-org
-    :config (progn
-	      (elfeed-org)
-	      (setq-default elfeed-search-filter "@3-days-ago +unread ")
-	      ;; Move forward and backward
-	      (define-key elfeed-show-mode-map (kbd "C-<right>") 'elfeed-show-next)
-	      (define-key elfeed-show-mode-map (kbd "C-<left>") 'elfeed-show-prev)
-	      (define-key elfeed-show-mode-map (kbd "k") 'elfeed-show-next)
-	      (define-key elfeed-show-mode-map (kbd "j") 'elfeed-show-prev)))
+(load-sensible-file "elfeed.el")
+(use-package elfeed-org)
+(use-package elfeed
+  :requires elfeed-org
+  :config (progn
+            (elfeed-org)
+            (setq-default elfeed-search-filter "@3-days-ago +unread ")
+            ;; Move forward and backward
+            (define-key elfeed-show-mode-map (kbd "C-<right>") 'elfeed-show-next)
+            (define-key elfeed-show-mode-map (kbd "C-<left>") 'elfeed-show-prev)
+            (define-key elfeed-show-mode-map (kbd "k") 'elfeed-show-next)
+            (define-key elfeed-show-mode-map (kbd "j") 'elfeed-show-prev)))
+#+end_src
+
+Let's add some goodies.
+
+#+begin_src emacs-lisp
+(use-package elfeed-goodies
+  :config (elfeed-goodies/setup))
 #+end_src
 
 ** Magit
@@ -2097,7 +2505,7 @@ export DBUS_SESSION_BUS_PID
 emacs --daemon &
 #+end_src
 
-** Ivy-lobsters
+** COMMENT Ivy-lobsters
 
 Show Lobste.rs' top stories using Help.
 
@@ -2117,12 +2525,14 @@ For browsing inside Emacs, I usually use w3m.
 Dashboard is the default startup page for my Emacs configuration.
 
 #+begin_src emacs-lisp
-(use-package hackernews)
 (use-package dashboard
-  :requires (all-the-icons hackernews)
+  :requires (all-the-icons)
   :config (progn
             (dashboard-setup-startup-hook)
-            (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*"))
+            (setq initial-buffer-choice
+                  (lambda ()
+                    (dashboard-insert-startupify-lists)
+                    (get-buffer "*dashboard*"))
                   dashboard-banner-logo-title "Welcome to GNU Emacs."
                   dashboard-startup-banner    'logo
                   dashboard-center-content    t
@@ -2148,10 +2558,15 @@ Dashboard is the default startup page for my Emacs configuration.
                   
                     ;;; Buttons
                   dashboard-navigator-buttons
-                  ;; Line 1
-                  `((("★" "Blog" "Alchemist's Hideout"
+                  `((;; Line 1
+                     ;; ("★" "Blog" "Alchemist's Hideout"
+                     ;;  (lambda (&rest _)
+                     ;;    (browse-url "http://alchemist.sdf.org")))
+                     (,(all-the-icons-faicon "file" :height 1.1 :v-adjust 0.0)
+                      "Config"
+                      "Open config file"
                       (lambda (&rest _)
-                        (browse-url "http://alchemist.sdf.org")))
+                        (find-file "~/.emacs.d/init.org")))
                      (,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
                       "GitHub"
                       "Go to GitHub profile"
@@ -2162,26 +2577,13 @@ Dashboard is the default startup page for my Emacs configuration.
                       "Go to Gitlab profile"
                       (lambda (&rest _)
                         (browse-url "https://gitlab.com/luksamuk")))
-                     (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
-                      "Instagram" "Go to Instagram"
-                      (lambda (&rest _)
-                        (browse-url "https://instagram.com")))
-                     )
-                    ((,(all-the-icons-faicon "comments" :height 1.1 :v-adjust 0.0)
-                      "Lobste.rs" "Open Lobste.rs client"
-                      (lambda (&rest _)
-                        (ivy-lobsters)))
-                     (,(all-the-icons-faicon "hacker-news" :height 1.1 :v-adjust 0.0)
-                      "Hacker News" "Open Hacker News client"
-                      (lambda (&rest _)
-                        (hackernews)))
-                     ;; (,(all-the-icons-faicon "spotify" :height 1.1 :v-adjust 0.0)
-                     ;;  "Spotify" "Open Spotify client"
+                     ;; (,(all-the-icons-faicon "instagram" :height 1.1 :v-adjust 0.0)
+                     ;;  "Instagram" "Go to Instagram"
                      ;;  (lambda (&rest _)
-                     ;;    (helm-spotify-plus)))
+                     ;;    (browse-url "https://instagram.com")))
                      )
-                    ;; Line 2
-                    ((,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
+                    (;; Line 3
+                     (,(all-the-icons-faicon "hashtag" :height 1.1 :v-adjust 0.0)
                       "Mastodon" "Open Mastodon client"
                       (lambda (&rest _)
                         (mastodon)))
@@ -2202,8 +2604,12 @@ Dashboard is the default startup page for my Emacs configuration.
                       (lambda (&rest _)
                         (telega nil)))
                      )
-                    ;; Line 3
-                    ((,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
+                    (;; Line 4
+                     (,(all-the-icons-faicon "firefox" :height 1.1 :v-adjust 0.0)
+                      "" "Open Firefox"
+                      (lambda (&rest _)
+                        (my-exec-async "firefox")))
+                     (,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
                       "" "Browse website using w3m"
                       (lambda (&rest _)
                         (w3m)))
@@ -2247,7 +2653,7 @@ repository]].
 #+begin_src emacs-lisp
 (use-package telega
   :config (progn
-            ;;(telega-notifications-mode 1) ; DBus notifications
+            (telega-notifications-mode 1) ; DBus notifications
             (setq telega-use-images t))
   :hook ((telega-chat-mode-hook
           .
@@ -2259,5 +2665,214 @@ repository]].
                          (when (telega-chat-bot-p telega-chatbuf--chat)
                            '(telega-company-botcmd))))
             (company-mode 1)))))
+#+end_src
+
+** Mingus
+
+Mingus controls MPD.
+
+#+begin_src emacs-lisp
+(use-package mingus)
+#+end_src
+
+** EMMS
+
+Here we configure EMMS by using the MPV backend.
+
+#+begin_src emacs-lisp
+(use-package emms
+  :config
+  (progn (require 'emms-setup)
+         (require 'emms-player-mpv)
+         (emms-all)
+         (setq emms-seek-seconds           5
+               emms-player-list            '(emms-player-mpv)
+               emms-info-functions         '(emms-info-cueinfo
+                                             emms-info-ogginfo
+                                             emms-info-mp3info
+                                             emms-info-metaflac)
+               emms-browser-covers         'emms-browser-cache-thumbnail)
+         (add-to-list 'emms-player-mpv-parameters "--no-audio-display"))
+  :bind
+  ("<XF86AudioPrev>" . emms-previous)
+  ("<XF86AudioNext>" . emms-next)
+  ("<XF86AudioPlay>" . emms-pause)
+  ("<XF86AudioStop>" . emms-stop))
+#+end_src
+
+** EXWM
+
+Configuration for EXWM.
+
+We begin with installation. I'm gonna assume EXWM is installed for the
+configuration that follows; to deactivate EXWM, just add a =COMMENT=
+directive to this topic so it doesn't tangle.
+
+#+begin_src emacs-lisp
+(use-package exwm
+  :config (progn (require 'exwm-config)
+                 (exwm-config-default)))
+#+end_src
+
+Require packages and add =ido= at start.
+
+#+begin_src emacs-lisp
+(require 'exwm)
+(require 'exwm-config)
+(ido-mode 1)
+#+end_src
+
+Also enable time on modeline.
+
+#+begin_src emacs-lisp
+(setq display-time-default-load-average nil
+      display-time-day-and-date t
+      display-time-24hr-format  t)
+(display-time-mode t)
+#+end_src
+
+*** Workspaces
+
+Initial number of buffers is 9, which works fine for me on bspwm as
+well.
+
+#+begin_src emacs-lisp
+(setq exwm-workspace-number 9)
+#+end_src
+
+*** Buffer naming
+
+Buffers created in EXWM should be named after their X window class
+name or title. Java applications and GIMP use window titles due to
+multiple windows.
+
+#+begin_src emacs-lisp
+(add-hook 'exwm-update-class-hook
+          (lambda ()
+            (unless (or (string-prefix-p "sun-awt-x11-" exwm-instance-name)
+                        (string= "gimp" exwm-instance-name))
+              (exwm-workspace-rename-buffer exwm-class-name))))
+
+(add-hook 'exwm-update-title-hook
+          (lambda ()
+            (when (or (not exwm-instance-name)
+                      (string-prefix-p "sun-awt-x11-" exwm-instance-name)
+                      (string= "gimp" exwm-instance-name))
+              (exwm-workspace-rename-buffer exwm-title))))
+#+end_src
+
+*** Utilities
+
+#+begin_src emacs-lisp
+(defun my-exec-async (command)
+  (start-process-shell-command command nil command))
+#+end_src
+
+#+begin_src emacs-lisp
+(labels ((workspace-switch (transform)
+           (let ((ws-num (% (funcall transform
+                                     exwm-workspace-current-index)
+                            exwm-workspace-number)))
+             (exwm-workspace-switch
+              (if (< ws-num 0)
+                  (1- exwm-workspace-number)
+                ws-num)))))
+  (defun my-exwm-next-workspace ()
+    (interactive)
+    (workspace-switch #'1+))
+
+  (defun my-exwm-prev-workspace ()
+    (interactive)
+    (workspace-switch #'1-)))
+#+end_src
+
+#+begin_src emacs-lisp
+(defun my-control-volume (action)
+  (when (member action '(:up :down :toggle))
+    (my-exec-async "dzvol -bg \"#14171e\"")
+    (case action
+      (:up     (my-exec-async "amixer set Master 2%+"))
+      (:down   (my-exec-async "amixer set Master 2%-"))
+      (:toggle (my-exec-async "amixer set Master toggle")))))
+#+end_src
+
+*** Global keys
+
+Here are some examples of keybindings.
+
+#+begin_src emacs-lisp
+(setq exwm-input-global-keys
+      ;; switch to line-mode, exit fullscreen, refresh etc
+      `(([?\s-r] . exwm-reset)
+        ;; Switch workspace
+        ([?\s-w] . exwm-workspace-switch) ; switch workspace
+        ;; Launch command without output. Either use s-& or s-SPC.
+        ;; With output is M-&.
+        ([?\s-&] . (lambda (command)
+                     (interactive (list (read-shell-command "$ ")))
+                     (my-exec-async command)))
+        (,(kbd "s-SPC") . (lambda (command)
+                            (interactive (list (read-shell-command "$ ")))
+                            (my-exec-async command)))
+        ;; Previous/Next workspace
+        ([?\s-a] . my-exwm-prev-workspace)
+        ([?\s-d] . my-exwm-next-workspace)
+        ([?\s-s] . exwm-floating-toggle-floating)
+        (,(kbd "<XF86AudioRaiseVolume>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :up)))
+        (,(kbd "<XF86AudioLowerVolume>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :down)))
+        (,(kbd "<XF86AudioMute>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :toggle)))))
+#+end_src
+
+*** System Tray
+
+#+begin_src emacs-lisp
+(require 'exwm-systemtray)
+(exwm-systemtray-enable)
+#+end_src
+
+*** Execute stuff on startup
+
+Title says all! Can't live without my stuff.
+
+#+begin_src emacs-lisp
+(add-hook 'exwm-init-hook
+          (lambda ()
+            (mapc #'my-exec-async
+                  '(;; Composition
+                    "compton"
+                    ;; Wallpaper
+                    "hsetroot -fill ~/pictures/Wallpapers/corona-beach.jpg"
+                    ;; NetworkManager applet
+                    "nm-applet"
+                    ;; Audio applet
+                    ;;"pa-applet"
+                    ;; Cursor
+                    "xsetroot -cursor-name left_ptr"
+                    ;; Keyboard layout applet
+                    "fbxkb"
+                    ;; Keybase daemon
+                    "keybase ctl start"
+                    ;; KBFS
+                    "KEYBASE_RUN_MODE=prod kbfsfuse /keybase"))))
+#+end_src
+
+I also want to switch to workspace 0 and use the dashboard buffer.
+
+#+begin_src emacs-lisp
+(add-hook 'exwm-init-hook
+          (lambda ()
+            (exwm-workspace-switch 0)
+            ;;(dashboard-insert-startupify-lists)
+            ;;(exwm-workspace-switch-to-buffer "*dashboard*")
+))
 #+end_src
 
