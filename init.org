@@ -2704,31 +2704,42 @@ Here we configure EMMS by using the MPV backend.
 
 Configuration for EXWM.
 
+#+begin_src emacs-lisp
+(defconst *use-exwm* t)
+
+(defmacro with-exwm (&rest body)
+  `(when *use-exwm*
+     ,@body))
+#+end_src
+
 We begin with installation. I'm gonna assume EXWM is installed for the
 configuration that follows; to deactivate EXWM, just add a =COMMENT=
 directive to this topic so it doesn't tangle.
 
 #+begin_src emacs-lisp
-(use-package exwm
-  :config (progn (require 'exwm-config)
-                 (exwm-config-default)))
+(with-exwm
+ (use-package exwm
+   :config (progn (require 'exwm-config)
+                  (exwm-config-default))))
 #+end_src
 
 Require packages and add =ido= at start.
 
 #+begin_src emacs-lisp
-(require 'exwm)
-(require 'exwm-config)
-(ido-mode 1)
+(with-exwm
+ (require 'exwm)
+ (require 'exwm-config)
+ (ido-mode 1))
 #+end_src
 
 Also enable time on modeline.
 
 #+begin_src emacs-lisp
-(setq display-time-default-load-average nil
-      display-time-day-and-date t
-      display-time-24hr-format  t)
-(display-time-mode t)
+(with-exwm
+ (setq display-time-default-load-average nil
+       display-time-day-and-date t
+       display-time-24hr-format  t)
+ (display-time-mode t))
 #+end_src
 
 *** Workspaces
@@ -2737,7 +2748,8 @@ Initial number of buffers is 9, which works fine for me on bspwm as
 well.
 
 #+begin_src emacs-lisp
-(setq exwm-workspace-number 9)
+(with-exwm
+ (setq exwm-workspace-number 9))
 #+end_src
 
 *** Buffer naming
@@ -2747,53 +2759,57 @@ name or title. Java applications and GIMP use window titles due to
 multiple windows.
 
 #+begin_src emacs-lisp
-(add-hook 'exwm-update-class-hook
-          (lambda ()
-            (unless (or (string-prefix-p "sun-awt-x11-" exwm-instance-name)
-                        (string= "gimp" exwm-instance-name))
-              (exwm-workspace-rename-buffer exwm-class-name))))
-
-(add-hook 'exwm-update-title-hook
-          (lambda ()
-            (when (or (not exwm-instance-name)
-                      (string-prefix-p "sun-awt-x11-" exwm-instance-name)
-                      (string= "gimp" exwm-instance-name))
-              (exwm-workspace-rename-buffer exwm-title))))
+(with-exwm
+ (add-hook 'exwm-update-class-hook
+           (lambda ()
+             (unless (or (string-prefix-p "sun-awt-x11-" exwm-instance-name)
+                         (string= "gimp" exwm-instance-name))
+               (exwm-workspace-rename-buffer exwm-class-name))))
+ 
+ (add-hook 'exwm-update-title-hook
+           (lambda ()
+             (when (or (not exwm-instance-name)
+                       (string-prefix-p "sun-awt-x11-" exwm-instance-name)
+                       (string= "gimp" exwm-instance-name))
+               (exwm-workspace-rename-buffer exwm-title)))))
 #+end_src
 
 *** Utilities
 
 #+begin_src emacs-lisp
-(defun my-exec-async (command)
-  (start-process-shell-command command nil command))
+(with-exwm
+ (defun my-exec-async (command)
+   (start-process-shell-command command nil command)))
 #+end_src
 
 #+begin_src emacs-lisp
-(labels ((workspace-switch (transform)
-           (let ((ws-num (% (funcall transform
-                                     exwm-workspace-current-index)
-                            exwm-workspace-number)))
-             (exwm-workspace-switch
-              (if (< ws-num 0)
-                  (1- exwm-workspace-number)
-                ws-num)))))
-  (defun my-exwm-next-workspace ()
-    (interactive)
-    (workspace-switch #'1+))
-
-  (defun my-exwm-prev-workspace ()
-    (interactive)
-    (workspace-switch #'1-)))
+(with-exwm
+ (cl-labels ((workspace-switch (transform)
+              (let ((ws-num (% (funcall transform
+                                        exwm-workspace-current-index)
+                               exwm-workspace-number)))
+                (exwm-workspace-switch
+                 (if (< ws-num 0)
+                     (1- exwm-workspace-number)
+                   ws-num)))))
+   (defun my-exwm-next-workspace ()
+     (interactive)
+     (workspace-switch #'1+))
+   
+   (defun my-exwm-prev-workspace ()
+     (interactive)
+     (workspace-switch #'1-))))
 #+end_src
 
 #+begin_src emacs-lisp
-(defun my-control-volume (action)
-  (when (member action '(:up :down :toggle))
-    (my-exec-async "dzvol -bg \"#14171e\"")
-    (case action
-      (:up     (my-exec-async "amixer set Master 2%+"))
-      (:down   (my-exec-async "amixer set Master 2%-"))
-      (:toggle (my-exec-async "amixer set Master toggle")))))
+(with-exwm
+ (defun my-control-volume (action)
+   (when (member action '(:up :down :toggle))
+     (my-exec-async "dzvol -bg \"#14171e\"")
+     (case action
+       (:up     (my-exec-async "amixer set Master 2%+"))
+       (:down   (my-exec-async "amixer set Master 2%-"))
+       (:toggle (my-exec-async "amixer set Master toggle"))))))
 #+end_src
 
 *** Global keys
@@ -2801,42 +2817,45 @@ multiple windows.
 Here are some examples of keybindings.
 
 #+begin_src emacs-lisp
-(setq exwm-input-global-keys
-      ;; switch to line-mode, exit fullscreen, refresh etc
-      `(([?\s-r] . exwm-reset)
-        ;; Switch workspace
-        ([?\s-w] . exwm-workspace-switch) ; switch workspace
-        ;; Launch command without output. Either use s-& or s-SPC.
-        ;; With output is M-&.
-        ([?\s-&] . (lambda (command)
-                     (interactive (list (read-shell-command "$ ")))
-                     (my-exec-async command)))
-        (,(kbd "s-SPC") . (lambda (command)
-                            (interactive (list (read-shell-command "$ ")))
-                            (my-exec-async command)))
-        ;; Previous/Next workspace
-        ([?\s-a] . my-exwm-prev-workspace)
-        ([?\s-d] . my-exwm-next-workspace)
-        ([?\s-s] . exwm-floating-toggle-floating)
-        (,(kbd "<XF86AudioRaiseVolume>")
-         . (lambda ()
-             (interactive)
-             (my-control-volume :up)))
-        (,(kbd "<XF86AudioLowerVolume>")
-         . (lambda ()
-             (interactive)
-             (my-control-volume :down)))
-        (,(kbd "<XF86AudioMute>")
-         . (lambda ()
-             (interactive)
-             (my-control-volume :toggle)))))
+(with-exwm
+ (setq exwm-input-global-keys
+       ;; switch to line-mode, exit fullscreen, refresh etc
+       `(([?\s-r] . exwm-reset)
+         ;; Switch workspace
+         ([?\s-w] . exwm-workspace-switch) ; switch workspace
+         ;; Launch command without output. Either use s-& or s-SPC.
+         ;; With output is M-&.
+         ([?\s-&] . (lambda (command)
+                      (interactive (list (read-shell-command "$ ")))
+                      (my-exec-async command)))
+         (,(kbd "s-SPC") . (lambda (command)
+                             (interactive
+                              (list (read-shell-command "$ ")))
+                             (my-exec-async command)))
+         ;; Previous/Next workspace
+         ([?\s-a] . my-exwm-prev-workspace)
+         ([?\s-d] . my-exwm-next-workspace)
+         ([?\s-s] . exwm-floating-toggle-floating)
+         (,(kbd "<XF86AudioRaiseVolume>")
+          . (lambda ()
+              (interactive)
+              (my-control-volume :up)))
+         (,(kbd "<XF86AudioLowerVolume>")
+          . (lambda ()
+              (interactive)
+              (my-control-volume :down)))
+         (,(kbd "<XF86AudioMute>")
+          . (lambda ()
+              (interactive)
+              (my-control-volume :toggle))))))
 #+end_src
 
 *** System Tray
 
 #+begin_src emacs-lisp
-(require 'exwm-systemtray)
-(exwm-systemtray-enable)
+(with-exwm
+ (require 'exwm-systemtray)
+ (exwm-systemtray-enable))
 #+end_src
 
 *** Execute stuff on startup
@@ -2844,35 +2863,34 @@ Here are some examples of keybindings.
 Title says all! Can't live without my stuff.
 
 #+begin_src emacs-lisp
-(add-hook 'exwm-init-hook
-          (lambda ()
-            (mapc #'my-exec-async
-                  '(;; Composition
-                    "compton"
-                    ;; Wallpaper
-                    "hsetroot -fill ~/pictures/Wallpapers/corona-beach.jpg"
-                    ;; NetworkManager applet
-                    "nm-applet"
-                    ;; Audio applet
-                    ;;"pa-applet"
-                    ;; Cursor
-                    "xsetroot -cursor-name left_ptr"
-                    ;; Keyboard layout applet
-                    "fbxkb"
-                    ;; Keybase daemon
-                    "keybase ctl start"
-                    ;; KBFS
-                    "KEYBASE_RUN_MODE=prod kbfsfuse /keybase"))))
+(with-exwm
+ (add-hook 'exwm-init-hook
+           (lambda ()
+             (mapc #'my-exec-async
+                   '(;; Composition
+                     "compton"
+                     ;; Wallpaper
+                     "hsetroot -fill ~/pictures/Wallpapers/corona-beach.jpg"
+                     ;; NetworkManager applet
+                     "nm-applet"
+                     ;; Audio applet
+                     ;;"pa-applet"
+                     ;; Cursor
+                     "xsetroot -cursor-name left_ptr"
+                     ;; Keyboard layout applet
+                     "fbxkb"
+                     ;; Keybase daemon
+                     "keybase ctl start"
+                     ;; KBFS
+                     "KEYBASE_RUN_MODE=prod kbfsfuse /keybase")))))
 #+end_src
 
 I also want to switch to workspace 0 and use the dashboard buffer.
 
 #+begin_src emacs-lisp
-(add-hook 'exwm-init-hook
-          (lambda ()
-            (exwm-workspace-switch 0)
-            ;;(dashboard-insert-startupify-lists)
-            ;;(exwm-workspace-switch-to-buffer "*dashboard*")
-))
+(with-exwm
+ (add-hook 'exwm-init-hook
+           (lambda ()
+             (exwm-workspace-switch 0))))
 #+end_src
 
