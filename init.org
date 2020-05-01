@@ -4,6 +4,123 @@
 #+PROPERTY: header-args :tangle yes
 #+STARTUP:  content
 
+* Summary :TOC_3:
+- [[#introduction][Introduction]]
+  - [[#usage][Usage]]
+  - [[#dependencies][Dependencies]]
+  - [[#screenshots][Screenshots]]
+- [[#preparation][Preparation]]
+  - [[#bootstrapping][Bootstrapping]]
+  - [[#packaging][Packaging]]
+    - [[#use-package][use-package]]
+    - [[#straightel][Straight.el]]
+    - [[#el-get][El-Get]]
+  - [[#sensible-files][Sensible files]]
+  - [[#custom][Custom]]
+- [[#appearance][Appearance]]
+  - [[#fonts][Fonts]]
+    - [[#fira-code-and-font-ligatures][Fira Code and Font Ligatures]]
+    - [[#emoji-support][Emoji support]]
+  - [[#visual][Visual]]
+  - [[#keybindings][Keybindings]]
+  - [[#autocompletion][Autocompletion]]
+  - [[#modeline][Modeline]]
+    - [[#telephone-line][Telephone-line]]
+  - [[#ivy][Ivy]]
+    - [[#ivy-rich][Ivy-rich]]
+    - [[#ivy-bibtex][Ivy-Bibtex]]
+    - [[#ivy-youtube][Ivy-YouTube]]
+    - [[#orderless][Orderless]]
+- [[#flycheck][Flycheck]]
+- [[#language-configurations][Language Configurations]]
+  - [[#general][General]]
+  - [[#org][Org]]
+    - [[#general-1][General]]
+    - [[#agenda][Agenda]]
+    - [[#appearance-1][Appearance]]
+    - [[#alert][Alert]]
+    - [[#calfw][Calfw]]
+    - [[#trello][Trello]]
+    - [[#templates][Templates]]
+    - [[#exports-and-org-babel][Exports and Org-Babel]]
+    - [[#org-capture-and-org-protocol][Org Capture and Org Protocol]]
+    - [[#org-ref][Org-ref]]
+    - [[#presentations][Presentations]]
+    - [[#org-noter][Org-noter]]
+    - [[#org-roam][Org-roam]]
+    - [[#org-journal][Org-journal]]
+    - [[#ox-odt][Ox-ODT]]
+    - [[#org-toc][org-toc]]
+  - [[#apl][APL]]
+    - [[#gnu-apl][GNU APL]]
+    - [[#dyalog-apl][Dyalog APL]]
+  - [[#assembly][Assembly]]
+  - [[#cc][C/C++]]
+  - [[#forth][Forth]]
+  - [[#futhark][Futhark]]
+  - [[#go][Go]]
+  - [[#haskell][Haskell]]
+  - [[#julia][Julia]]
+  - [[#lean][Lean]]
+  - [[#lisp][Lisp]]
+    - [[#common-lisp][Common Lisp]]
+    - [[#scheme][Scheme]]
+    - [[#shen][Shen]]
+    - [[#clojure][Clojure]]
+    - [[#appearance-2][Appearance]]
+  - [[#unison][Unison]]
+  - [[#python][Python]]
+  - [[#prolog][Prolog]]
+  - [[#purescript][PureScript]]
+  - [[#ocaml][OCaml]]
+    - [[#utop][Utop]]
+  - [[#reasonml][ReasonML]]
+    - [[#merlin][Merlin]]
+    - [[#reason-mode][reason-mode]]
+    - [[#rtop][rtop]]
+  - [[#rust][Rust]]
+  - [[#tex][TeX]]
+  - [[#web][Web]]
+    - [[#nodejs][Node.js]]
+  - [[#config][Config]]
+- [[#language-server-provider-lsp][Language Server Provider (LSP)]]
+  - [[#default-configuration][Default configuration]]
+  - [[#performance-adjustments][Performance adjustments]]
+  - [[#java-support][Java support]]
+- [[#debug-adapter-protocol-dap][Debug Adapter Protocol (DAP)]]
+  - [[#default-configuration-1][Default configuration]]
+- [[#miscellaneous][Miscellaneous]]
+  - [[#company][Company]]
+  - [[#vterm][VTerm]]
+  - [[#projectile][Projectile]]
+    - [[#counsel-projectile][Counsel-projectile]]
+  - [[#neotree][Neotree]]
+  - [[#pdf-tools][PDF Tools]]
+  - [[#mastodon][Mastodon]]
+  - [[#slack][Slack]]
+  - [[#novel][nov.el]]
+  - [[#mu4e][Mu4e]]
+    - [[#extra-configuration][Extra configuration]]
+  - [[#elfeed][Elfeed]]
+  - [[#magit][Magit]]
+  - [[#w3m][w3m]]
+  - [[#dashboard][Dashboard]]
+  - [[#stumpwm][StumpWM]]
+  - [[#database-gui][Database GUI]]
+  - [[#paradox][Paradox]]
+  - [[#telega][Telega]]
+  - [[#mingus][Mingus]]
+  - [[#emms][EMMS]]
+  - [[#writeroom-mode][Writeroom Mode]]
+  - [[#exwm][EXWM]]
+    - [[#config-start][Config start]]
+    - [[#workspaces][Workspaces]]
+    - [[#buffer-naming][Buffer naming]]
+    - [[#utilities][Utilities]]
+    - [[#global-keys][Global keys]]
+    - [[#system-tray][System Tray]]
+    - [[#execute-stuff-on-startup][Execute stuff on startup]]
+
 * Introduction
 
 Welcome to my Emacs configuration. To use it, put this file, the =elisp=
@@ -28,7 +145,8 @@ As for external binaries, here is a list. Notice that some may not be
 vital, and can be replaced/removed.
 
 - =Dina= (default font)
-- =Firefox= (default browser)
+# - =Firefox= (default browser)
+- Chromium (default browser)
 # - =cmake= and =rtags= (for CMake IDE)
 - =gforth= (for Forth evaluation)
 - =go= and =godoctor= (for Go Flycheck support)
@@ -251,12 +369,13 @@ etcetera in Org Mode. Originally found [[https://stackoverflow.com/questions/375
              (list 'org-code 'org-block 'org-table))))
 #+end_src
 
-And the following code is good for Poet theme, to be set later.
+And the following code  is good for Poet theme, to  be set later (this
+is deactivated for now).
 
 #+begin_src emacs-lisp
-(set-face-attribute 'default nil :family my-default-font-mono :height 90)
-(set-face-attribute 'fixed-pitch nil :family my-default-font-mono :height 90)
-(set-face-attribute 'variable-pitch nil :family my-default-font-variable :height 110)
+;;(set-face-attribute 'default nil :family my-default-font-mono :height 90)
+;;(set-face-attribute 'fixed-pitch nil :family my-default-font-mono :height 90)
+;;(set-face-attribute 'variable-pitch nil :family my-default-font-variable :height 110)
 #+end_src
 
 *** Fira Code and Font Ligatures
@@ -363,7 +482,7 @@ set at standalone or daemonized Emacs.
     (height               . 50)
     (width                . 90)
     (cursor-type          . bar)
-    (alpha                . 85)
+    (alpha                . 90)
     (tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
@@ -376,17 +495,17 @@ want extra stuff.
 ;; Dark themes
 (defconst my-default-theme-dark
   ;;'kaolin-bubblegum
-  ;;'kaolin-aurora
+  'kaolin-aurora
   ;;'modus-vivendi
-  'poet-dark
+  ;;'poet-dark
   ;;'dracula
   )
 
 ;; White themes
 (defconst my-default-theme-light
   ;;'kaolin-light
-  ;;'modus-operandi
-  'poet
+  'modus-operandi
+  ;;'poet
   )
 #+end_src
 
@@ -408,13 +527,16 @@ Now let's install and set them.
 
 #+begin_src emacs-lisp
 (use-package kaolin-themes)
-;;(use-package modus-operandi-theme)
+(use-package modus-operandi-theme
+  :init
+  (setq modus-operandi-theme-rainbow-headings t
+        modus-operandi-theme-distinct-org-blocks t))
 ;;(use-package modus-vivendi-theme)
-(use-package poet-theme)
+;;(use-package poet-theme)
 ;;(use-package dracula-theme)
 
-(theme-dark)
-;;(theme-light)
+;;(theme-dark)
+(theme-light)
 #+end_src
 
 There are also some general rules I set up manually.
@@ -425,7 +547,8 @@ There are also some general rules I set up manually.
       show-paren-mode               1
       show-paren-delay              0
       scroll-bar-mode               -1
-      browser-url-browse-function   'browse-url-firefox
+      ;;browser-url-browse-function   'browse-url-firefox
+      browser-url-browse-function   'browse-url-chromium
       linum-format                  "%5d"
       tab-width                     4
       ;; Mouse
@@ -638,6 +761,20 @@ This queries YouTube stuff from Emacs and plays it on the browser.
 
 #+begin_src emacs-lisp
 (use-package ivy-youtube)
+#+end_src
+
+*** Orderless
+
+Adds   orderless  completion   style,   dividing   the  pattern   into
+space-separated components.  Matches candidates that match  all of the
+components in any order.
+
+For more info, [[https://github.com/oantolin/orderless][see the repository]].
+
+#+begin_src emacs-lisp
+(use-package orderless
+  :init (icomplete-mode)
+  :custom (completion-styles '(orderless)))
 #+end_src
 
 ** COMMENT Perspective.el
@@ -868,8 +1005,8 @@ org-babel checks before evaluation, support shift select.
       org-support-shift-select         'always)
 #+end_src
 
-Another interesting thing to have is centered text and a /variable
-pitch/ on Org files. This allows non-monospace fonts on buffers and
+Another  interesting thing  to have  is centered  text and  a /variable
+pitch/ on  Org files.  This allows non-monospace  fonts on  buffers and
 centered things.
 
 #+begin_src emacs-lisp
@@ -878,8 +1015,14 @@ centered things.
 
 (add-hook 'org-mode-hook
           (lambda ()
-            (variable-pitch-mode 1)
+            ;;(variable-pitch-mode 1)
             (olivetti-mode 1)))
+#+end_src
+
+Let's also set the default justification to full.
+
+#+begin_src emacs-lisp
+(setq-default default-justification 'full)
 #+end_src
 
 *** Alert
@@ -983,6 +1126,12 @@ Configure Htmlize to preferred defaults.
 #+begin_src emacs-lisp
 (use-package htmlize
   :config (setq htmlize-output-type 'css))
+#+end_src
+
+Also, make sure Org exports with ~HTML5~ tags.
+
+#+begin_src emacs-lisp
+(setq org-html-html5-fancy t)
 #+end_src
 
 **** LaTeX
@@ -1144,8 +1293,13 @@ I use Epresentation which makes Emacs fullscreen in org.
 Org-noter is a tool for writing notes in Org for PDFs, EPUB, DVI, PS,
 etc. See the documentation [[https://github.com/weirdNox/org-noter][here]].
 
+I  like it  when ~org-noter~  opens in  the current  frame, and  when it
+doesn't kill the current frame on session end.
+
 #+begin_src emacs-lisp
-(use-package org-noter)
+(use-package org-noter
+  :config (setq org-noter-always-create-frame nil
+                org-noter-kill-frame-at-session-end nil))
 #+end_src
 
 *** Org-roam
@@ -1157,14 +1311,13 @@ The variable =org-roam-directory= is determined in =sensitive/org-roam.el=.
 
 (use-package org-roam
   :hook (after-init . org-roam-mode)
-  :straight (:host github :repo "jethrokuan/org-roam" :branch "develop")
   :config (load-sensible-file "org-roam.el")
   :bind (:map org-roam-mode-map
               (("C-c n l" . org-roam)
                ("C-c n f" . org-roam-find-file)
                ("C-c n b" . org-roam-switch-to-buffer)
-               ("C-c n g" . org-roam-show-graph))
-              :map org-mode-map
+               ("C-c n g" . org-roam-graph))
+         :map org-mode-map
               (("C-c n i" . org-roam-insert))))
 #+end_src
 
@@ -1183,6 +1336,20 @@ It'll provide a nice interface for browsing and filtering notes.
   (deft-use-filter-string-for-filename t)
   (deft-default-extension "org")
   (deft-directory org-roam-directory))
+#+end_src
+
+**** Org-roam-bibtex
+
+This  provides tight  integration  between  ~org-roam~, ~helm-bibtex~  and
+~org-ref~.
+
+#+begin_src emacs-lisp
+(use-package org-roam-bibtex
+  :after org-roam
+  :hook (org-roam-mode . org-roam-bibtex-mode)
+  :bind (:map org-roam-bibtex-mode-map
+              (("C-c n c" . org-ref-insert-cite-with-completion)
+               ("C-c n i" . ivy-bibtex))))
 #+end_src
 
 *** Org-journal
@@ -1219,6 +1386,29 @@ This improves the ODT exporter for Org mode.
 
 #+begin_src emacs-lisp
 (use-package ox-odt)
+#+end_src
+
+*** org-toc
+
+Creates a table of contents automatically inside an org file. Just add
+=:TOC:= to a header. More info at [[https://github.com/snosov1/toc-org][its repository]].
+
+#+begin_src emacs-lisp
+(use-package toc-org
+  :config (progn (add-hook 'org-mode-hook 'toc-org-mode)))
+#+end_src
+
+*** COMMENT poly-org
+
+Polymode is  a tool which  allows code blocks in  literate programming
+files to use their own mode in  said block.
+
+It doesn't quite work well with ~variable-pitch-mode~ and ~olivetti-mode~;
+also doesn't work well with ~org-babel~'s default system, though the use
+of a language's mode inside an org source block is very, very useful.
+
+#+begin_src emacs-lisp
+(use-package poly-org)
 #+end_src
 
 ** APL
@@ -1577,16 +1767,24 @@ We use Shen's Elisp backend.
 
 **** CIDER
 
+Let's make sure that cider's  CLJS REPL uses =figwheel-sidecar= for cool
+things.
+
 #+begin_src emacs-lisp
 (use-package cider)
 #+end_src
 
 *** Appearance
 
-Use prettify-symbols-mode on all Lisps.
+Improve appearance on all Lisp modes by using:
+
+- ~prettify-symbols~;
+- ~fira-code~ (described above).
 
 #+begin_src emacs-lisp
-(mapc (lambda (hook) (add-hook hook #'prettify-symbols-mode))
+(mapc (lambda (hook)
+        (add-hook hook #'prettify-symbols-mode)
+        (add-hook hook #'fira-code-mode))
       '(lisp-mode-hook
         emacs-lisp-mode-hook
         scheme-mode-hook
@@ -2288,7 +2486,7 @@ Sensible stuff goes into =sensitive/slack.el=.
 
 #+begin_src emacs-lisp
 (use-package slack
-  :commands (slack-start)
+  ;;:commands (slack-start)
   :init
   (setq slack-buffer-emojify      t
         slack-prefer-current-team t)
@@ -2615,10 +2813,11 @@ Dashboard is the default startup page for my Emacs configuration.
                         (telega nil)))
                      )
                     (;; Line 4
-                     (,(all-the-icons-faicon "firefox" :height 1.1 :v-adjust 0.0)
-                      "" "Open Firefox"
-                      (lambda (&rest _)
-                        (my-exec-async "firefox")))
+                     ;; (,(all-the-icons-faicon "firefox" :height 1.1 :v-adjust 0.0)
+                     ;;  "" "Open Firefox"
+                     ;;  (lambda (&rest _)
+                     ;;    (with-exwm
+                     ;;     (my-exec-async "firefox"))))
                      (,(all-the-icons-faicon "external-link" :height 1.1 :v-adjust 0.0)
                       "" "Browse website using w3m"
                       (lambda (&rest _)
@@ -2710,53 +2909,52 @@ Here we configure EMMS by using the MPV backend.
   ("<XF86AudioStop>" . emms-stop))
 #+end_src
 
+** Writeroom Mode
+
+For distraction-free editing.
+
+#+begin_src emacs-lisp
+(use-package writeroom-mode)
+#+end_src
+
 ** EXWM
+:PROPERTIES:
+:header-args:emacs-lisp: :tangle no
+:END:
+
+Remove the above property to use EXWM.
+
+*** Config start
 
 Configuration for EXWM.
 
 #+begin_src emacs-lisp
-(defconst *use-exwm* t)
-
-(defmacro with-exwm (&rest body)
-  `(when *use-exwm*
-     ,@body))
-#+end_src
-
-We begin with installation. I'm gonna assume EXWM is installed for the
-configuration that follows; to deactivate EXWM, just add a =COMMENT=
-directive to this topic so it doesn't tangle.
-
-#+begin_src emacs-lisp
-(with-exwm
- (use-package exwm
-   :config (progn (require 'exwm-config)
-                  (exwm-config-default))))
+(use-package exwm
+  :config (progn (require 'exwm-config)
+                 (exwm-config-default)))
 #+end_src
 
 Require packages and add =ido= at start.
 
 #+begin_src emacs-lisp
-(with-exwm
- (require 'exwm)
- (require 'exwm-config)
- (ido-mode 1))
+(require 'exwm)
+(require 'exwm-config)
+(ido-mode 1)
 #+end_src
 
 Also enable time on modeline.
 
 #+begin_src emacs-lisp
-(with-exwm
- (setq display-time-default-load-average nil
-       display-time-day-and-date t
+(setq display-time-default-load-average nil
+      display-time-day-and-date t
        display-time-24hr-format  t)
- (display-time-mode t))
+(display-time-mode t)
 #+end_src
 
 Finally, start the Emacs server.
 
 #+begin_src emacs-lisp
-(with-exwm
- (server-start))
+(server-start)
 #+end_src
 
 *** Workspaces
@@ -2765,8 +2963,7 @@ Initial number of buffers is 9, which works fine for me on bspwm as
 well.
 
 #+begin_src emacs-lisp
-(with-exwm
- (setq exwm-workspace-number 9))
+(setq exwm-workspace-number 9)
 #+end_src
 
 *** Buffer naming
@@ -2776,57 +2973,53 @@ name or title. Java applications and GIMP use window titles due to
 multiple windows.
 
 #+begin_src emacs-lisp
-(with-exwm
- (add-hook 'exwm-update-class-hook
-           (lambda ()
-             (unless (or (string-prefix-p "sun-awt-x11-" exwm-instance-name)
-                         (string= "gimp" exwm-instance-name))
-               (exwm-workspace-rename-buffer exwm-class-name))))
+(add-hook 'exwm-update-class-hook
+          (lambda ()
+            (unless (or (string-prefix-p "sun-awt-x11-" exwm-instance-name)
+                        (string= "gimp" exwm-instance-name))
+                (exwm-workspace-rename-buffer exwm-class-name))))
  
- (add-hook 'exwm-update-title-hook
+(add-hook 'exwm-update-title-hook
            (lambda ()
              (when (or (not exwm-instance-name)
                        (string-prefix-p "sun-awt-x11-" exwm-instance-name)
                        (string= "gimp" exwm-instance-name))
-               (exwm-workspace-rename-buffer exwm-title)))))
+                 (exwm-workspace-rename-buffer exwm-title))))
 #+end_src
 
 *** Utilities
 
 #+begin_src emacs-lisp
-(with-exwm
- (defun my-exec-async (command)
-   (start-process-shell-command command nil command)))
+(defun my-exec-async (command)
+  (start-process-shell-command command nil command))
 #+end_src
 
 #+begin_src emacs-lisp
-(with-exwm
- (cl-labels ((workspace-switch (transform)
-              (let ((ws-num (% (funcall transform
-                                        exwm-workspace-current-index)
-                               exwm-workspace-number)))
-                (exwm-workspace-switch
-                 (if (< ws-num 0)
-                     (1- exwm-workspace-number)
-                   ws-num)))))
-   (defun my-exwm-next-workspace ()
-     (interactive)
-     (workspace-switch #'1+))
+(cl-labels ((workspace-switch (transform)
+             (let ((ws-num (% (funcall transform
+                                       exwm-workspace-current-index)
+                              exwm-workspace-number)))
+               (exwm-workspace-switch
+                (if (< ws-num 0)
+                    (1- exwm-workspace-number)
+                  ws-num)))))
+  (defun my-exwm-next-workspace ()
+    (interactive)
+    (workspace-switch #'1+))
    
-   (defun my-exwm-prev-workspace ()
-     (interactive)
-     (workspace-switch #'1-))))
+  (defun my-exwm-prev-workspace ()
+    (interactive)
+    (workspace-switch #'1-)))
 #+end_src
 
 #+begin_src emacs-lisp
-(with-exwm
- (defun my-control-volume (action)
-   (when (member action '(:up :down :toggle))
-     (my-exec-async "dzvol -bg \"#14171e\"")
-     (case action
-       (:up     (my-exec-async "amixer set Master 2%+"))
-       (:down   (my-exec-async "amixer set Master 2%-"))
-       (:toggle (my-exec-async "amixer set Master toggle"))))))
+(defun my-control-volume (action)
+  (when (member action '(:up :down :toggle))
+    (my-exec-async "dzvol -bg \"#14171e\"")
+    (case action
+      (:up     (my-exec-async "amixer set Master 2%+"))
+      (:down   (my-exec-async "amixer set Master 2%-"))
+      (:toggle (my-exec-async "amixer set Master toggle")))))
 #+end_src
 
 *** Global keys
@@ -2834,45 +3027,43 @@ multiple windows.
 Here are some examples of keybindings.
 
 #+begin_src emacs-lisp
-(with-exwm
- (setq exwm-input-global-keys
-       ;; switch to line-mode, exit fullscreen, refresh etc
-       `(([?\s-r] . exwm-reset)
-         ;; Switch workspace
-         ([?\s-w] . exwm-workspace-switch) ; switch workspace
-         ;; Launch command without output. Either use s-& or s-SPC.
-         ;; With output is M-&.
-         ([?\s-&] . (lambda (command)
-                      (interactive (list (read-shell-command "$ ")))
-                      (my-exec-async command)))
-         (,(kbd "s-SPC") . (lambda (command)
-                             (interactive
-                              (list (read-shell-command "$ ")))
-                             (my-exec-async command)))
-         ;; Previous/Next workspace
-         ([?\s-a] . my-exwm-prev-workspace)
-         ([?\s-d] . my-exwm-next-workspace)
-         ([?\s-s] . exwm-floating-toggle-floating)
-         (,(kbd "<XF86AudioRaiseVolume>")
-          . (lambda ()
-              (interactive)
-              (my-control-volume :up)))
-         (,(kbd "<XF86AudioLowerVolume>")
-          . (lambda ()
-              (interactive)
-              (my-control-volume :down)))
-         (,(kbd "<XF86AudioMute>")
-          . (lambda ()
-              (interactive)
-              (my-control-volume :toggle))))))
+(setq exwm-input-global-keys
+      ;; switch to line-mode, exit fullscreen, refresh etc
+      `(([?\s-r] . exwm-reset)
+        ;; Switch workspace
+        ([?\s-w] . exwm-workspace-switch) ; switch workspace
+        ;; Launch command without output. Either use s-& or s-SPC.
+        ;; With output is M-&.
+        ([?\s-&] . (lambda (command)
+                     (interactive (list (read-shell-command "$ ")))
+                     (my-exec-async command)))
+        (,(kbd "s-SPC") . (lambda (command)
+                            (interactive
+                             (list (read-shell-command "$ ")))
+                            (my-exec-async command)))
+        ;; Previous/Next workspace
+        ([?\s-a] . my-exwm-prev-workspace)
+        ([?\s-d] . my-exwm-next-workspace)
+        ([?\s-s] . exwm-floating-toggle-floating)
+        (,(kbd "<XF86AudioRaiseVolume>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :up)))
+        (,(kbd "<XF86AudioLowerVolume>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :down)))
+        (,(kbd "<XF86AudioMute>")
+         . (lambda ()
+             (interactive)
+             (my-control-volume :toggle)))))
 #+end_src
 
 *** System Tray
 
 #+begin_src emacs-lisp
-(with-exwm
- (require 'exwm-systemtray)
- (exwm-systemtray-enable))
+(require 'exwm-systemtray)
+(exwm-systemtray-enable)
 #+end_src
 
 *** Execute stuff on startup
@@ -2880,34 +3071,32 @@ Here are some examples of keybindings.
 Title says all! Can't live without my stuff.
 
 #+begin_src emacs-lisp
-(with-exwm
- (add-hook 'exwm-init-hook
-           (lambda ()
-             (mapc #'my-exec-async
-                   '(;; Composition
-                     "compton"
-                     ;; Wallpaper
-                     "hsetroot -fill ~/pictures/Wallpapers/corona-beach.jpg"
-                     ;; NetworkManager applet
-                     "nm-applet"
-                     ;; Audio applet
-                     ;;"pa-applet"
-                     ;; Cursor
-                     "xsetroot -cursor-name left_ptr"
-                     ;; Keyboard layout applet
-                     "fbxkb"
-                     ;; Keybase daemon
-                     "keybase ctl start"
-                     ;; KBFS
-                     "KEYBASE_RUN_MODE=prod kbfsfuse /keybase")))))
+(add-hook 'exwm-init-hook
+          (lambda ()
+            (mapc #'my-exec-async
+                  '(;; Composition
+                    "compton"
+                    ;; Wallpaper
+                    "hsetroot -fill ~/pictures/Wallpapers/corona-beach.jpg"
+                    ;; NetworkManager applet
+                    "nm-applet"
+                    ;; Audio applet
+                    ;;"pa-applet"
+                    ;; Cursor
+                    "xsetroot -cursor-name left_ptr"
+                    ;; Keyboard layout applet
+                    "fbxkb"
+                    ;; Keybase daemon
+                    "keybase ctl start"
+                    ;; KBFS
+                    "KEYBASE_RUN_MODE=prod kbfsfuse /keybase"))))
 #+end_src
 
 I also want to switch to workspace 0 and use the dashboard buffer.
 
 #+begin_src emacs-lisp
-(with-exwm
- (add-hook 'exwm-init-hook
-           (lambda ()
-             (exwm-workspace-switch 0))))
+(add-hook 'exwm-init-hook
+          (lambda ()
+            (exwm-workspace-switch 0)))
 #+end_src
 
