@@ -37,6 +37,7 @@
     - [[#savehist][Savehist]]
   - [[#buffer-naming][Buffer naming]]
   - [[#multiple-cursors][Multiple cursors]]
+  - [[#yank-with-indent][Yank with indent]]
 - [[#language-configurations][Language Configurations]]
   - [[#general][General]]
   - [[#org][Org]]
@@ -47,11 +48,9 @@
     - [[#calfw][Calfw]]
     - [[#templates][Templates]]
     - [[#exports-and-org-babel][Exports and Org-Babel]]
-    - [[#org-capture-and-org-protocol][Org Capture and Org Protocol]]
     - [[#org-ref][Org-ref]]
     - [[#presentations][Presentations]]
     - [[#org-noter][Org-noter]]
-    - [[#org-roam][Org-roam]]
     - [[#org-media-note][Org-media-note]]
     - [[#ox-odt][Ox-ODT]]
     - [[#ox-hugo][Ox-hugo]]
@@ -71,7 +70,6 @@
   - [[#forth][Forth]]
   - [[#futhark][Futhark]]
   - [[#go][Go]]
-  - [[#haskell][Haskell]]
   - [[#java][Java]]
   - [[#julia][Julia]]
   - [[#lean][Lean]]
@@ -83,6 +81,8 @@
     - [[#clojure][Clojure]]
     - [[#majestic][Majestic]]
     - [[#appearance-2][Appearance]]
+  - [[#net][.NET]]
+    - [[#f][F#]]
   - [[#pascal][Pascal]]
   - [[#python][Python]]
   - [[#prolog][Prolog]]
@@ -94,12 +94,15 @@
   - [[#web][Web]]
     - [[#nodejs][Node.js]]
     - [[#vuejs][Vue.js]]
+    - [[#typescript][TypeScript]]
   - [[#config][Config]]
   - [[#gemini][Gemini]]
   - [[#sql][SQL]]
   - [[#shell][Shell]]
   - [[#yaml][Yaml]]
   - [[#zig][Zig]]
+  - [[#glsl][GLSL]]
+  - [[#finish-org-babel-config][Finish Org-Babel config]]
 - [[#language-server-protocol-lsp][Language Server Protocol (LSP)]]
     - [[#lsp-ui-and-lsp-ivy][Lsp-ui and Lsp-ivy]]
     - [[#which-key][Which-key]]
@@ -122,6 +125,7 @@
   - [[#writeroom-mode][Writeroom Mode]]
   - [[#fancy-battery][Fancy-battery]]
   - [[#display-fill-column-indicator][Display fill column indicator]]
+  - [[#kubernetes][Kubernetes]]
 
 * Introduction
 
@@ -408,8 +412,8 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "creep-9")
 ;;(defconst my-default-font "JuliaMono-9")
 ;;(defconst my-default-font "Terminus-11")
-(defconst my-default-font "Hack-10")
-;;(defconst my-default-font "Cascadia Code-9")
+;;(defconst my-default-font "Hack-10")
+(defconst my-default-font "Cascadia Code-9")
 
 ;;(defconst my-default-font-mono "Fira Code")
 ;;(defconst my-default-font-mono "Iosevka")
@@ -418,8 +422,8 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font-mono "RobotoMono Nerd Font-9")
 ;;(defconst my-default-font-mono "creep-9")
 ;;(defconst my-default-font-mono "JuliaMono-9")
-;;(defconst my-default-font-mono "Cascadia Code-9")
-(defconst my-default-font-mono "Hack-10")
+(defconst my-default-font-mono "Cascadia Code-9")
+;;(defconst my-default-font-mono "Hack-10")
 ;;(defconst my-default-font-mono "Terminus")
 
 ;;(defconst my-default-font-variable "Libre Baskerville")
@@ -458,7 +462,7 @@ set at standalone or daemonized Emacs.
     (height               . 50)
     (width                . 90)
     (cursor-type          . box)
-    (alpha                . 80)
+    (alpha                . 100)
     ;;(tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
@@ -513,13 +517,11 @@ Now let's install and set them.
 
 #+begin_src emacs-lisp
 ;;(use-package kaolin-themes)
-(use-package modus-operandi-theme
+(use-package modus-themes
   :init
   (setq modus-operandi-theme-rainbow-headings t
-        modus-operandi-theme-distinct-org-blocks t))
-(use-package modus-vivendi-theme
-  :init
-  (setq modus-vivendi-theme-rainbow-headings t
+        modus-operandi-theme-distinct-org-blocks t
+        modus-vivendi-theme-rainbow-headings t
         modus-vivendi-theme-distinct-org-blocks t))
 
 ;; Other themes
@@ -883,62 +885,19 @@ convention.
     (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)))
 #+end_src
 
-* COMMENT Flycheck
-
-Flycheck is cool and works well with JavaScript ESLint, for instance.
+** Yank with indent
 
 #+begin_src emacs-lisp
-(use-package flycheck
-  :defer t
-  :config (progn
-            (add-hook 'after-init-hook #'global-flycheck-mode)
-            ;; Disable JSHint and json-jsonlist
-            (setq-default flycheck-disabled-checkers
-                          (append flycheck-disabled-checkers
-                                  '(javascript-jshint
-                                    json-jsonlist)))
-#+end_src
-
-I also like to use ESLint with Flycheck when dealing with JavaScript
-stuff, that is, when ESLint is being used. Everything here is
-partially taken from [[http://codewinds.com/blog/2015-04-02-emacs-flycheck-eslint-jsx.html][this website]].
-
-|---------+---------------------------|
-| Binding | Effect                    |
-|---------+---------------------------|
-| =C-c ! l= | List of errors in buffer. |
-| =C-c ! n= | Next error                |
-| =C-c ! p= | Previous error            |
-|---------+---------------------------|
-
-For that, make sure that the packages
-
-- =eslint=
-- =eslint-config-airbnb-bundle=
-- =prettier=
-- =eslint-plugin-prettier=
-- =eslint-config-prettier=
-- =eslint-plugin-react=
-
-are installed globally (via =npm= or =yarn=). I am going to enable it to
-all JS-associated modes which are installed.
-
-#+begin_src emacs-lisp
-(mapc (lambda (mode)
-        (flycheck-add-mode 'javascript-eslint mode))
-      '(web-mode js2-mode rjsx-mode))
-#+end_src
-
-Let's add Credo as a valid flycheck syntax checker too.
-
-#+begin_src emacs-lisp
-(flycheck-add-mode 'elixir-credo 'elixir-mode)
-#+end_src
-
-Now let's close this block, shall we?
-
-#+begin_src emacs-lisp
-))
+(defun yank-with-indent ()
+  (interactive)
+  (let ((indent
+         (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
+    (message indent)
+    (yank)
+    (narrow-to-region (mark t) (point))
+    (pop-to-mark-command)
+    (replace-string "\n" (concat "\n" indent))
+    (widen)))
 #+end_src
 
 * Language Configurations
@@ -1257,21 +1216,6 @@ Let's begin by setting up a few things for Babel.
 ;;(use-package ob-go)
 (use-package ess
   :defer t) ;; package for languages such as Julia, R
-(org-babel-do-load-languages 'org-babel-load-languages
-                             '((lisp   . t)
-                               ;;(go     . t)
-                               ;;(shell  . t)
-                               (dot    . t)
-                               (js     . t)
-                               ;;(julia  . t)
-                               (C      . t)
-                               (scheme . t)
-                               ;;(shen   . t)
-                               (sml . t)
-                               (prolog . t)
-                               (python . t)
-                               (ein    . t)
-                               (sql    . t)))
 
 (mapc (lambda (x)
         (add-to-list 'org-babel-tangle-lang-exts x))
@@ -1411,7 +1355,7 @@ Export Org filex to Epub format.
 (use-package ox-epub)
 #+end_src
 
-*** Org Capture and Org Protocol
+*** COMMENT Org Capture and Org Protocol
 
 Org Protocol configures Emacs to deal properly with the Org Capture
 extension for browsers.
@@ -1562,7 +1506,7 @@ With a prefix ARG, remove start location."
     (add-hook 'pdf-annot-activate-handler-functions #'org-noter-pdftools-jump-to-note)))
 #+end_src
 
-*** Org-roam
+*** COMMENT Org-roam
 
 The variable =org-roam-directory= is determined in =sensitive/org-roam.el=.
 
@@ -2314,7 +2258,7 @@ We also rely on flycheck for Go.
   :after go-mode)
 #+end_src
 
-** Haskell
+** COMMENT Haskell
 
 Just make sure we are using intero-mode.
 
@@ -2593,11 +2537,21 @@ Paredit is also extremely useful, so let's use it.
                 ,*lisp-hooks*))
 #+end_src
 
-** COMMENT Unison
+** .NET
+
+*** F#
 
 #+begin_src emacs-lisp
-(use-package unison-mode
-  :defer t)
+(use-package fsharp-mode
+  :config (add-hook 'fsharp-mode-hook 'highlight-indent-guides-mode))
+#+end_src
+
+When F# language is  active, make it so that the ~.fs~  extension belongs to F#,
+and ~.fth~ belongs to Forth.
+
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.fs\\'" . fsharp-mode))
+(add-to-list 'auto-mode-alist '("\\.fth\\'" . forth-mode))
 #+end_src
 
 ** Pascal
@@ -2694,10 +2648,19 @@ Linux repository.
 (use-package sml-mode
   :defer t
   :config (setq sml-program-name "~/.local/bin/sml"))
+#+end_src
 
+#+begin_src emacs-lisp
 (use-package ob-sml
   :defer t
   :after sml-mode)
+#+end_src
+
+** COMMENT Unison
+
+#+begin_src emacs-lisp
+(use-package unison-mode
+  :defer t)
 #+end_src
 
 ** COMMENT OCaml
@@ -2803,10 +2766,7 @@ Depends on OCaml utop integration
   :defer t
   :config
   (setq rustic-format-on-save t)
-  ;; (setq rustic-lsp-server 'rls
-  ;;       rustic-format-trigger 'on-save
-  ;;       rustic-format-on-save t)
-  )
+  (setq rustic-lsp-server 'rust-analyzer))
 #+end_src
 
 *** Cargo files
@@ -2876,7 +2836,10 @@ easier parens/javascript editing.
           (add-to-list 'auto-mode-alist '("\\.erb\\'" . web-mode))
           (add-to-list 'auto-mode-alist '("\\.mustache\\'" . web-mode))
           (add-to-list 'auto-mode-alist '("\\.djhtml\\'" . web-mode))
-          (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode)))
+          (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+          (add-to-list 'auto-mode-alist '("\\.ts\\'" . web-mode))
+          (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+          )
   :config (progn
             (add-hook 'web-mode-hook
                       (lambda ()
@@ -3105,6 +3068,53 @@ strange thing. I'll just disable it)
 	      (set-face-background 'mmm-default-submode-face nil))))
 #+end_src
 
+*** TypeScript
+
+Install the following first:
+
+#+begin_src bash :exec no :tangle no
+npm i -g tern prettier
+#+end_src
+
+For managing Node versions, I recommend NVM.
+
+#+begin_src emacs-lisp
+(use-package rjsx-mode)
+
+(use-package typescript-mode
+  :config
+  (add-to-list 'auto-mode-alist '("\\.js.*$" . rjsx-mode)))
+
+(use-package tide)
+(use-package yasnippet)
+(use-package prettier-js)
+
+
+(defun tide-setup-hook ()
+  (tide-setup)
+  (eldoc-mode)
+  (tide-hl-identifier-mode +1)
+  (flycheck-mode +1)
+  (setq web-mode-enable-auto-quoting nil
+	web-mode-markup-indent-offset 2
+	web-mode-code-indent-offset 2
+	web-mode-attr-indent-offset 2
+	web-mode-attr-value-indent-offset 2
+	;;lsp-eslint-server-command ...
+	)
+  (set (make-local-variable 'company-backends)
+       '((company-tide company-files :with company-yasnippet)
+	 (company-dabbrev-code company-dabbrev))))
+
+;;(add-hook 'before-save-hook 'tide-format-before-save)
+(add-hook 'web-mode-hook 'tide-setup-hook)
+(flycheck-add-mode 'typescript-tslint 'web-mode)
+(add-hook 'web-mode-hook 'company-mode)
+(add-hook 'web-mode-hook 'prettier-js-mode)
+
+(yas-global-mode 1)
+#+end_src
+
 ** Config
 
 We use a mode for editing Linux config files.
@@ -3165,6 +3175,35 @@ Also defines ZLS path.
   )
 #+end_src
 
+** GLSL
+
+Welp....
+
+#+begin_src emacs-lisp
+(use-package glsl-mode)
+(use-package company-glsl)
+#+end_src
+
+** Finish Org-Babel config
+
+#+begin_src emacs-lisp
+(org-babel-do-load-languages 'org-babel-load-languages
+                             '((lisp   . t)
+                               ;;(go     . t)
+                               ;;(shell  . t)
+                               (dot    . t)
+                               (js     . t)
+                               ;;(julia  . t)
+                               (C      . t)
+                               (scheme . t)
+                               ;;(shen   . t)
+                               (sml . t)
+                               (prolog . t)
+                               (python . t)
+                               (ein    . t)
+                               (sql    . t)))
+#+end_src
+
 * Language Server Protocol (LSP)
 
 This is for providing IDE-like experience in some languages.
@@ -3185,6 +3224,8 @@ Our prefix for LSP is ~C-l~.
          (elixir-mode . lsp-deferred)
          (zig-mode . lsp-deferred)
          (dart-mode . lsp-deferred)
+         (go-mode . lsp-deferred)
+         (fsharp-mode . lsp-deferred)
 	 (lsp-mode   . lsp-enable-which-key-integration))
   :commands (lsp lsp-deferred)
   :config
@@ -4496,6 +4537,13 @@ Don't forget to ~M-x copilot-login~! Also use ~M-x copilot-diagnose~.
             (copilot-clear-overlay)
             (when (member major-mode copilot-allowed-modes)
               (copilot-complete))))
+#+end_src
+
+** Kubernetes
+
+#+begin_src emacs-lisp
+(use-package kubernetes
+  :config (fset 'k8s 'kubernetes-overview))
 #+end_src
 
 * COMMENT Decrease GC Threshold
