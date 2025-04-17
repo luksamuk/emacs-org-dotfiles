@@ -1,4 +1,4 @@
-#+TITLE:    Alchemist's Emacs Configuration
+]#+TITLE:    Alchemist's Emacs Configuration
 #+AUTHOR:   Lucas S. Vieira
 #+BABEL:    :cache yes
 #+PROPERTY: header-args:emacs-lisp :tangle yes
@@ -25,7 +25,9 @@
 - [[#appearance][Appearance]]
   - [[#fonts][Fonts]]
     - [[#emoji-support][Emoji support]]
+    - [[#font-ligatures][Font ligatures]]
   - [[#visual][Visual]]
+    - [[#alternative-initial-screen][Alternative initial screen]]
   - [[#keybindings][Keybindings]]
   - [[#autocompletion][Autocompletion]]
   - [[#modeline][Modeline]]
@@ -51,13 +53,15 @@
     - [[#org-ref][Org-ref]]
     - [[#presentations][Presentations]]
     - [[#org-noter][Org-noter]]
+    - [[#org-roam][Org-roam]]
+    - [[#org-roam-ui][Org-roam-ui]]
     - [[#org-media-note][Org-media-note]]
     - [[#ox-odt][Ox-ODT]]
     - [[#ox-hugo][Ox-hugo]]
     - [[#org-toc][org-toc]]
+    - [[#github-flavored-markdown-export-ox-gfm][Github-Flavored Markdown export (ox-gfm)]]
     - [[#org-tree-slide][Org-tree-slide]]
     - [[#org-mind-map][org-mind-map]]
-    - [[#org-modern][Org-modern]]
   - [[#apl][APL]]
     - [[#gnu-apl][GNU APL]]
     - [[#dyalog-apl][Dyalog APL]]
@@ -85,7 +89,8 @@
     - [[#f][F#]]
   - [[#pascal][Pascal]]
   - [[#python][Python]]
-  - [[#prolog][Prolog]]
+    - [[#virtualenv-setup][Virtualenv setup]]
+    - [[#blacken-setup][Blacken setup]]
   - [[#standard-ml-sml][Standard ML (SML)]]
   - [[#rust][Rust]]
     - [[#cargo-files][Cargo files]]
@@ -102,13 +107,14 @@
   - [[#yaml][Yaml]]
   - [[#zig][Zig]]
   - [[#glsl][GLSL]]
+  - [[#odin][Odin]]
   - [[#finish-org-babel-config][Finish Org-Babel config]]
 - [[#language-server-protocol-lsp][Language Server Protocol (LSP)]]
     - [[#lsp-ui-and-lsp-ivy][Lsp-ui and Lsp-ivy]]
     - [[#which-key][Which-key]]
-  - [[#dart][Dart]]
 - [[#debug-adapter-protocol-dap][Debug Adapter Protocol (DAP)]]
   - [[#default-configuration][Default configuration]]
+  - [[#psx-configuration][PSX configuration]]
 - [[#miscellaneous][Miscellaneous]]
   - [[#pinentry][Pinentry]]
   - [[#vterm][VTerm]]
@@ -121,11 +127,16 @@
   - [[#elfeed][Elfeed]]
   - [[#magit][Magit]]
     - [[#magit-forge][Magit Forge]]
+  - [[#deadgrep][Deadgrep]]
   - [[#mpc][MPC]]
   - [[#writeroom-mode][Writeroom Mode]]
   - [[#fancy-battery][Fancy-battery]]
   - [[#display-fill-column-indicator][Display fill column indicator]]
   - [[#kubernetes][Kubernetes]]
+  - [[#restclientel][Restclient.el]]
+  - [[#terraform][Terraform]]
+  - [[#elcord][Elcord]]
+- [[#window-shortcuts-for-terminal][Window shortcuts for terminal]]
 
 * Introduction
 
@@ -177,7 +188,7 @@ vital, and can be replaced/removed.
 - =Tern.js= (JavaScript, Node.js support; can be installed with =npm=)
 - =Perl= (for =edbi=)
 - =Python 3=, =ipython=, =pip= for Python stuff
-- =Fira Code= font for ligatures (when using it -- see Ligatures)
+- =Fira Code= or =Cascadia Code= font for ligatures (when using it -- see Ligatures)
 - NerdFonts, specifically ~FuraMono Nerd Font~
 - =eslint= for =flymake-eslint=
 
@@ -394,10 +405,16 @@ To properly use Esup, delete ~~/.emacs.d/init.elc~ before use.
 
 There are many fonts I usually choose. I just uncomment as needed.
 
+Some fonts you might want to download:
+
+- Xanh Mono: https://fonts.google.com/specimen/Xanh+Mono
+
+
 #+begin_src emacs-lisp
-;;(defconst my-default-font "-*-fixed-medium-r-normal-*-15-*-*-*-*-*-*-*")
-;;(defconst my-default-font "-misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
-;;(defconst my-default-font "-b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
+;;(defconst my-default-font "misc-fixed-medium-r-*-*-13-*-*-*-*-*-*-*")
+;;(defconst my-default-font "fixed-9")
+;;(defconst my-default-font "misc-fixed-*-*-*-*-12-*-*-*-*-*-*-*")
+;;(defconst my-default-font "b&h-lucidatypewriter-medium-r-normal-sans-14-*-*-*-*-*-iso8859-1")
 ;;(defconst my-default-font "FantasqueSansMono Nerd Font-10")
 ;;(defconst my-default-font "Monoid-8.5")
 ;;(defconst my-default-font "APL385 Unicode-8")
@@ -411,9 +428,14 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font "RobotoMono Nerd Font-9")
 ;;(defconst my-default-font "creep-9")
 ;;(defconst my-default-font "JuliaMono-9")
-;;(defconst my-default-font "Terminus-11")
-;;(defconst my-default-font "Hack-10")
-(defconst my-default-font "Cascadia Code-9")
+(defconst my-default-font "Terminus-11")
+;;(defconst my-default-font "Hack-8")
+;;(defconst my-default-font "Cascadia Code-9")
+;;(defconst my-default-font "Fixedsys Excelsior-11")
+;;(defconst my-default-font "Anonymous Pro-11")
+
+;;(defconst my-default-font "Xanh Mono-11")
+;;(defconst my-default-font "CMU Typewriter Text-10")
 
 ;;(defconst my-default-font-mono "Fira Code")
 ;;(defconst my-default-font-mono "Iosevka")
@@ -422,9 +444,13 @@ There are many fonts I usually choose. I just uncomment as needed.
 ;;(defconst my-default-font-mono "RobotoMono Nerd Font-9")
 ;;(defconst my-default-font-mono "creep-9")
 ;;(defconst my-default-font-mono "JuliaMono-9")
-(defconst my-default-font-mono "Cascadia Code-9")
+;;(defconst my-default-font-mono "Cascadia Code-9")
 ;;(defconst my-default-font-mono "Hack-10")
-;;(defconst my-default-font-mono "Terminus")
+;;(defconst my-default-font-mono "Terminus-8")
+(defconst my-default-font-mono my-default-font)
+
+;;(defconst my-default-font-mono "Xanh Mono-11")
+;;(defconst my-default-font-mono "CMU Typewriter Text-10")
 
 ;;(defconst my-default-font-variable "Libre Baskerville")
 (defconst my-default-font-variable "Cardo")
@@ -435,9 +461,9 @@ The following code describes face  attributes for variable pitch. This
 is good for Poet theme, and used in Org Mode plaintext.
 
 #+begin_src emacs-lisp
-(set-face-attribute 'default nil :family my-default-font-mono :height 100)
-(set-face-attribute 'fixed-pitch nil :family my-default-font-mono :height 100)
-(set-face-attribute 'variable-pitch nil :family my-default-font-variable :height 110)
+(set-face-attribute 'default nil :family my-default-font-mono :height 115)
+(set-face-attribute 'fixed-pitch nil :family my-default-font-mono :height 115)
+(set-face-attribute 'variable-pitch nil :family my-default-font-variable :height 90)
 #+end_src
 
 *** Emoji support
@@ -448,6 +474,35 @@ Symbola font.
 #+begin_src emacs-lisp
 (use-package emojify
   :hook ((after-init-hook . global-emojify-mode)))
+#+end_src
+
+*** Font ligatures
+
+#+begin_src emacs-lisp
+(use-package ligature
+  :config
+  ;; Enable the "www" ligature in every possible major mode
+  (ligature-set-ligatures 't '("www"))
+  ;; Enable traditional ligature support in eww-mode, if the
+  ;; `variable-pitch' face supports it
+  (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+  ;; Enable all Cascadia Code ligatures in programming modes
+  (ligature-set-ligatures 'prog-mode '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
+                                       ":::" "::=" "=:=" "===" "==>" "=!=" "=>>" "=<<" "=/=" "!=="
+                                       "!!." ">=>" ">>=" ">>>" ">>-" ">->" "->>" "-->" "---" "-<<"
+                                       "<~~" "<~>" "<*>" "<||" "<|>" "<$>" "<==" "<=>" "<=<" "<->"
+                                       "<--" "<-<" "<<=" "<<-" "<<<" "<+>" "</>" "###" "#_(" "..<"
+                                       "..." "+++" "/==" "///" "_|_" "www" "&&" "^=" "~~" "~@" "~="
+                                       "~>" "~-" "**" "*>" "*/" "||" "|}" "|]" "|=" "|>" "|-" "{|"
+                                       "[|" "]#" "::" ":=" ":>" ":<" "$>" "==" "=>" "!=" "!!" ">:"
+                                       ">=" ">>" ">-" "-~" "-|" "->" "--" "-<" "<~" "<*" "<|" "<:"
+                                       "<$" "<=" "<>" "<-" "<<" "<+" "</" "#{" "#[" "#:" "#=" "#!"
+                                       "##" "#(" "#?" "#_" "%%" ".=" ".-" ".." ".?" "+>" "++" "?:"
+                                       "?=" "?." "??" ";;" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)"
+                                       "\\\\" "://"))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
 #+end_src
 
 ** Visual
@@ -462,7 +517,7 @@ set at standalone or daemonized Emacs.
     (height               . 50)
     (width                . 90)
     (cursor-type          . box)
-    (alpha                . 100)
+    (alpha                . 85)
     ;;(tty-color-mode       . -1)
     (vertical-scroll-bars . nil)))
 (setq default-frame-alist my-frame-alist)
@@ -479,23 +534,25 @@ I use kaolin-bubblegum as my default theme, and kaolin-light when I
 want extra stuff.
 
 #+begin_src emacs-lisp
+(use-package ef-themes)
+(use-package atom-one-dark-theme)
+#+end_src
+
+#+begin_src emacs-lisp
 ;; Dark themes
 (defconst my-default-theme-dark
-  ;;'kaolin-bubblegum
-  ;;'kaolin-aurora
-  ;;'kaolin-dark
-  ;;'modus-vivendi
-  ;;'poet-dark
-  'vscode-dark-plus
-  ;;'monokai-pro
+  ;;'vscode-dark-plus
+  ;;'catppuccin
+  ;;'tron-legacy
+  ;;'ef-cherie
+  'modus-vivendi
+  ;;'atom-one-dark
   )
 
 ;; White themes
 (defconst my-default-theme-light
-  ;;'kaolin-light
+  ;;'catppuccin-latte
   'modus-operandi
-  ;;'poet
-  ;;'plan9
   )
 #+end_src
 
@@ -529,6 +586,9 @@ Now let's install and set them.
 (use-package poet-theme)
 (use-package vscode-dark-plus-theme)
 (use-package monokai-pro-theme)
+(use-package autothemer)
+(use-package catppuccin-theme)
+(use-package tron-legacy-theme)
 
 (theme-dark)
 ;;(theme-light)
@@ -581,9 +641,61 @@ Also, show indent guides.
 (use-package highlight-indent-guides
   :config
   (progn
-    (setq highlight-indent-guides-method 'character)
+    ;;(setq highlight-indent-guides-method 'character)
+    (setq highlight-indent-guides-method 'fill)
     (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
     (add-hook 'yaml-mode-hook #'highlight-indent-guides-mode)))
+#+end_src
+
+*** Alternative initial screen
+
+Taken from [[https://xenodium.com/emacs-a-welcoming-experiment/][here]].
+Needs emacs.png on the .emacs.d dir.
+
+#+begin_src emacs-lisp
+(defun show-welcome-buffer ()
+  "Show *Welcome* buffer."
+  (with-current-buffer (get-buffer-create "*Welcome*")
+    (setq truncate-lines t)
+    (let* ((buffer-read-only)
+           (image-path "~/.emacs.d/emacs.png")
+           (image (create-image image-path))
+           (size (image-size image))
+           (height (cdr size))
+           (width (car size))
+           (top-margin (floor (/ (- (window-height) height) 2)))
+           (left-margin (floor (/ (- (window-width) width) 2)))
+           (prompt-title "Welcome to Emacs!"))
+      (erase-buffer)
+      (setq mode-line-format nil)
+      (goto-char (point-min))
+      (insert (make-string top-margin ?\n ))
+      (insert (make-string left-margin ?\ ))
+      (insert-image image)
+      (insert "\n\n\n")
+      (insert (make-string (floor (/ (- (window-width) (string-width prompt-title)) 2)) ?\ ))
+      (insert prompt-title))
+    (setq cursor-type nil)
+    (read-only-mode +1)
+    (switch-to-buffer (current-buffer))
+    ;;(local-set-key (kbd "q") 'kill-this-buffer)
+    ))
+
+;;(setq initial-scratch-message nil)
+;;(setq inhibit-startup-screen t)
+
+(when (< (length command-line-args) 2)
+  (add-hook 'emacs-startup-hook (lambda ()
+                                  (when (display-graphic-p)
+                                    (show-welcome-buffer)))))
+
+;; Initial buffer for new frame
+;; (setq initial-buffer-choice
+;;       (lambda ()
+;;         (when (display-graphic-p
+;;                (show-welcome-buffer)))
+;;         (let ((buffer (get-buffer "*Welcome*")))
+;;           (or buffer (get-buffer "*scratch*")))))
 #+end_src
 
 ** Keybindings
@@ -774,6 +886,8 @@ Bibtex files for bibliography. It also defines
 =bibtex-completion-library-path=.
 
 #+begin_src emacs-lisp
+(use-package helm-bibtex)
+
 (use-package ivy-bibtex
 ;;  :defer nil
   :config (progn (load-sensible-file "helm-bibtex.el")
@@ -947,6 +1061,12 @@ Outshine mode helps us with foldable code.
 (defvar outline-minor-mode-prefix "\M-#")
 (use-package outshine
   :config (add-hook 'prog-mode-hook 'outshine-mode))
+#+end_src
+
+Reformatter is useful for defining custom formatters.
+
+#+begin_src emacs-lisp
+(use-package reformatter)
 #+end_src
 
 ** Org
@@ -1132,7 +1252,7 @@ with polymode.
 #+begin_src emacs-lisp
 (use-package olivetti
 ;;  :defer nil
-  :config (setq-default olivetti-body-width 100))
+  :config (setq-default olivetti-body-width 150))
 
 (add-hook 'org-mode-hook
           (lambda ()
@@ -1165,15 +1285,23 @@ Org-alert uses libnotify to create notifications for the calendar.
 Calfw is my default calendar tool. I bind it to F6 key.
 
 #+begin_src emacs-lisp
-  (use-package calfw)
-  (use-package calfw-org
-    :requires calfw
+(use-package calfw)
+(use-package calfw-ical
+  :requires calfw
     :config (progn
-	      (setq cfw:org-overwrite-default-keybinding t)
+              (load-sensible-file "calfw.el")
 	      (global-set-key (kbd "<f6>")
 			      (lambda ()
 				(interactive)
-				(cfw:open-org-calendar)))))
+				(cfw:open-ical-calendar *my-calendar*)))))
+;; (use-package calfw-org
+;;   :requires calfw
+;;   :config (progn
+;; 	    (setq cfw:org-overwrite-default-keybinding t)
+;; 	    (global-set-key (kbd "<f6>")
+;; 			      (lambda ()
+;; 				(interactive)
+;; 				(cfw:open-org-calendar)))))
 #+end_src
 
 *** COMMENT Trello
@@ -1428,7 +1556,7 @@ makes sure that ABNTeX2's =\citeonline{}= works.
 
 WARNING: This is borked...
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (defconst org-ref-abntex-types
   '("citeonline" "Cite without parens (abnTeX2)"))
 (add-to-list 'org-ref-cite-types org-ref-abntex-types)
@@ -1506,7 +1634,7 @@ With a prefix ARG, remove start location."
     (add-hook 'pdf-annot-activate-handler-functions #'org-noter-pdftools-jump-to-note)))
 #+end_src
 
-*** COMMENT Org-roam
+*** Org-roam
 
 The variable =org-roam-directory= is determined in =sensitive/org-roam.el=.
 
@@ -1537,25 +1665,31 @@ opens   it  on a web browser.
 The rest below is related to configuring org-roam itself.
 
 #+begin_src emacs-lisp
+(load-sensible-file "org-roam.el")
+
 (use-package org-roam
   :defer t
-  :hook (after-init . org-roam-setup)
-  :config (load-sensible-file "org-roam.el")
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n b" . org-roam-switch-to-buffer)
-               ("C-c n g" . org-roam-graph)
-               ;;("C-c n s" . org-roam-server-browse)
-               )
-         :map org-mode-map
-              (("C-c n i" . org-roam-insert))))
+  :config
+  (progn
+    (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+    (org-roam-db-autosync-mode))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today)
+         ("C-c n i" . org-roam-insert)))
 #+end_src
+
+#+RESULTS:
+: org-roam-insert
 
 Another  important  thing to  have  is  support for  org-roam  through
 org-protocol. So we do that.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (require 'org-roam-protocol)
 #+end_src
 
@@ -1610,7 +1744,7 @@ This  provides tight  integration  between  ~org-roam~, ~helm-bibtex~  and
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :bind (:map org-roam-bibtex-mode-map
               (("C-c n c" . org-ref-insert-cite-with-completion)
-               ("C-c n B" . ivy-bibtex))))
+               ("C-c n b" . ivy-bibtex))))
 #+end_src
 
 **** Org-journal
@@ -1634,7 +1768,7 @@ console helps.
   (org-journal-date-format "%A, %d de %B de %Y"))
 #+end_src
 
-**** Org-books
+**** COMMENT Org-books
 
 This package is good for managing  bibliography. I'll use it to manage
 my reading list.
@@ -1672,7 +1806,7 @@ much better. I'll spin it up on port 8715 for no reason at all.
     (org-roam-server-mode 1)))
 #+end_src
 
-*** COMMENT Org-roam-ui
+*** Org-roam-ui
 
 This replaces Org-roam-server.
 
@@ -1774,6 +1908,14 @@ Check the project [[https://github.com/casouri/valign][repository]] for more inf
         markdown-mode-hook))
 #+end_src
 
+*** Github-Flavored Markdown export (ox-gfm)
+
+So that we can have nice code blocks on export.
+
+#+begin_src emacs-lisp
+(use-package ox-gfm)
+#+end_src
+
 *** Org-tree-slide
 
 This is  good for quick  presentations. Seems nicer than  ~epresent~ and
@@ -1801,7 +1943,7 @@ Other engine options: neato, twopi, fdp, sfdp, twopi, circo
   (setq org-mind-map-engine "dot"))
 #+end_src
 
-*** Org-modern
+*** COMMENT Org-modern
 
 Modern looks for Org-mode.
 
@@ -2059,6 +2201,13 @@ Make sure =nasm-mode= is used for all Assembly files.
     :config (add-to-list 'auto-mode-alist '("\\.asm\\'" . nasm-mode)))
 #+end_src
 
+Use =gas-mode= for ~.S~ files.
+
+#+begin_src emacs-lisp :tangle no
+(load (expand-file-name (concat user-emacs-directory "elisp/gas-mode.el")))
+(add-to-list 'auto-mode-alist '("\\.S\\'" . gas-mode))
+#+end_src
+
 ** C/C++
 
 Configure C/C++ support for my taste. Defaults include indentation
@@ -2101,13 +2250,45 @@ of width 4 with spaces, K&R style.
 To help with autocompletion, we use =irony= and =company-irony=.
 
 #+begin_src emacs-lisp
-(use-package company
-  :defer t)
-(use-package company-irony
+;; == irony-mode ==
+(use-package irony
+  :ensure t
   :defer t
-  :requires company
+  :init
+  (add-hook 'c++-mode-hook 'irony-mode)
+  (add-hook 'c-mode-hook 'irony-mode)
+  (add-hook 'objc-mode-hook 'irony-mode)
   :config
-  (add-to-list 'company-backends 'company-irony))
+  ;; replace the `completion-at-point' and `complete-symbol' bindings in
+  ;; irony-mode's buffers by irony-mode's function
+  (defun my-irony-mode-hook ()
+    (define-key irony-mode-map [remap completion-at-point]
+      'irony-completion-at-point-async)
+    (define-key irony-mode-map [remap complete-symbol]
+      'irony-completion-at-point-async))
+  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
+  )
+
+(use-package company
+  :defer t
+  :init (add-hook 'after-init-hook 'global-company-mode)
+  :config
+  (use-package company-irony :ensure t :defer t)
+  (setq company-idle-delay              nil
+	company-minimum-prefix-length   2
+	company-show-numbers            t
+	company-tooltip-limit           20
+	company-dabbrev-downcase        nil
+	)
+  (add-to-list 'company-backends 'company-irony)
+  (add-to-list 'company-backends 'company-gtags)
+  ;;:bind ("<tab>" . company-complete-common)
+  )
+(use-package company-irony-c-headers
+  :defer t
+  :requires company-irony
+  :config (add-to-list 'company-backends 'company-irony-c-headers))
 #+end_src
 
 Also... enable Flycheck.
@@ -2347,7 +2528,7 @@ Scheme, Elisp and Racket.
 *** Common Lisp
 Here, we use Roswell to manage our SLIME installation.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (load (expand-file-name "~/.roswell/helper.el"))
 #+end_src
 
@@ -2355,10 +2536,10 @@ Here, we use Roswell to manage our SLIME installation.
 (use-package slime)
 #+end_src
 
-Let's also make sure that we have our function which starts SLIME
+[OLD!] Let's also make sure that we have our function which starts SLIME
 on a specific directory. This is useful for using Qlot.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no :eval no
 (defun slime-qlot-exec (directory)
   (interactive (list (read-directory-name "Project directory: ")))
   (slime-start :program "qlot"
@@ -2366,6 +2547,14 @@ on a specific directory. This is useful for using Qlot.
                :directory directory
                :name 'qlot
                :env (list (concat "PATH=" (mapconcat 'identity exec-path ":")))))
+#+end_src
+
+[New!] Add Qlot as underlying Lisp implementation.
+
+#+begin_src emacs-lisp
+(setq slime-lisp-implementations
+      '((sbcl ("sbcl") :coding-system utf-8-unix)
+        (qlot ("qlot" "exec" "ros" "run") :coding-system utf-8-unix)))
 #+end_src
 
 Another  nice thing  to do  is to  have a  way to  evaluate a  Roswell
@@ -2418,6 +2607,10 @@ to Chez Scheme.
   :defer t)
 
 (use-package geiser-chez
+  :defer t
+  :after geiser)
+
+(use-package geiser-racket
   :defer t
   :after geiser)
 #+end_src
@@ -2596,12 +2789,38 @@ Now we add the org-mode integration for ipython.
 
 And org-mode integration for Emacs IPython Notebook (ein).
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package ein
   :defer t)
 #+end_src
 
-** Prolog
+*** Virtualenv setup
+
+#+begin_src emacs-lisp
+(use-package pyvenv
+  :ensure t
+  :config
+  (pyvenv-mode t)
+
+  ;; Set correct Python interpreter
+  (setq pyvenv-post-activate-hooks
+        (list (lambda ()
+                (setq python-shell-interpreter (concat pyvenv-virtual-env "bin/python3")))))
+  (setq pyvenv-post-deactivate-hooks
+        (list (lambda ()
+                (setq python-shell-interpreter "python3")))))
+#+end_src
+
+*** Blacken setup
+
+Use Blacken for formatting Python buffers.
+
+#+begin_src emacs-lisp
+(use-package blacken
+  :hook (python-mode . blacken-mode))
+#+end_src
+
+** COMMENT Prolog
 
 Use Prolog on Org.
 
@@ -2613,6 +2832,7 @@ Use Prolog on Org.
 Then use Emacs Does Interactive Prolog.
 
 #+begin_src emacs-lisp
+;; TODO: prolog-mode-map is void
 (use-package ediprolog
   :config (progn
 	    (setq ediprolog-system 'swi)
@@ -2879,7 +3099,6 @@ rjsx-mode works on top of js2-mode for parsing JSX for extra spicyness.
   :config (progn
             (setq js2-highlight-level 3)
             (add-hook 'js2-mode-hook 'flow-minor-enable-automatically)
-            ;;(add-hook 'js2-mode-hook 'enable-fira-code-ligatures)
             (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
             (add-to-list 'auto-mode-alist '("\\.jsx\\'" . rjsx-mode))))
 #+end_src
@@ -3107,10 +3326,10 @@ For managing Node versions, I recommend NVM.
 	 (company-dabbrev-code company-dabbrev))))
 
 ;;(add-hook 'before-save-hook 'tide-format-before-save)
-(add-hook 'web-mode-hook 'tide-setup-hook)
-(flycheck-add-mode 'typescript-tslint 'web-mode)
+(add-hook 'typescript-mode-hook 'tide-setup-hook)
+(flycheck-add-mode 'typescript-tslint 'typescript-mode-hook)
 (add-hook 'web-mode-hook 'company-mode)
-(add-hook 'web-mode-hook 'prettier-js-mode)
+(add-hook 'typescript-mode-hook 'prettier-js-mode)
 
 (yas-global-mode 1)
 #+end_src
@@ -3184,6 +3403,13 @@ Welp....
 (use-package company-glsl)
 #+end_src
 
+** Odin
+
+#+begin_src emacs-lisp
+(el-get-bundle mattt-b/odin-mode)
+(require 'odin-mode)
+#+end_src
+
 ** Finish Org-Babel config
 
 #+begin_src emacs-lisp
@@ -3198,7 +3424,7 @@ Welp....
                                (scheme . t)
                                ;;(shen   . t)
                                (sml . t)
-                               (prolog . t)
+                               ;; (prolog . t)
                                (python . t)
                                (ein    . t)
                                (sql    . t)))
@@ -3226,12 +3452,15 @@ Our prefix for LSP is ~C-l~.
          (dart-mode . lsp-deferred)
          (go-mode . lsp-deferred)
          (fsharp-mode . lsp-deferred)
+         (terraform-mode . lsp-deferred)
+         (python-mode . lsp-deferred)
 	 (lsp-mode   . lsp-enable-which-key-integration))
   :commands (lsp lsp-deferred)
   :config
   ;; Dart config
   (setq lsp-lens-enable t
         lsp-signature-auto-activate nil)
+  (add-to-list 'company-backends 'company-capf)
   ;; Clojure config
   (mapc (lambda (m) (add-to-list 'lsp-language-id-configuration
 				 `(,m . "clojure")))
@@ -3239,6 +3468,11 @@ Our prefix for LSP is ~C-l~.
 	  clojurec-mode
 	  clojurescript-mode
 	  clojurex-mode)))
+
+;; LSP configuration for Python. Make sure you also have the Jedi language server:
+;; pip install jedi-language-server
+;; (or, on Linux, just install it with your package manager)
+(use-package lsp-jedi)
 #+end_src
 
 *** Lsp-ui and Lsp-ivy
@@ -3267,7 +3501,7 @@ Finally, let's enable ~which-key~.
   :config (which-key-mode))
 #+end_src
 
-** Dart
+** COMMENT Dart
 
 Dart tools for Dart and Flutter development.
 
@@ -3275,12 +3509,41 @@ Dart tools for Dart and Flutter development.
 (use-package dart-mode
   :config
   (progn
+    (setq lsp-dart-dap-flutter-hot-reload-on-save t
+          dart-format-on-save t)
     (define-key dart-mode-map (kbd "C-c C-c C-c") 'lsp-dart-run)
     (define-key dart-mode-map (kbd "C-c C-c r") 'lsp-dart-dap-flutter-hot-reload)
     (define-key dart-mode-map (kbd "C-c C-c C-r") 'lsp-dart-dap-flutter-hot-restart)))
 
 (use-package lsp-dart
   :after '(lsp dart-mode))
+#+end_src
+
+Let's add a custom formatter.
+
+#+begin_src emacs-lisp
+(reformatter-define dart-format
+  :program "dart"
+  :args '("format"))
+
+(with-eval-after-load "dart-mode"
+  (define-key dart-mode-map (kbd "C-c C-c f") 'dart-format-buffer))
+#+end_src
+
+*** Hover.el
+
+Hover is a tool to run Flutter applications outside of an emulator.
+
+Install Hover as described in https://github.com/go-flutter-desktop/hover.
+
+#+begin_src emacs-lisp
+(use-package hover
+  :after dart-mode
+  :config
+  (progn
+    (define-key dart-mode-map (kbd "C-c C-c h") 'hover-run-or-hot-reload)
+    (setq hover-hot-reload-on-save t
+          hover-clear-buffer-on-hot-restart t)))
 #+end_src
 
 * Debug Adapter Protocol (DAP)
@@ -3300,25 +3563,45 @@ the Debug Server, similar to LSP.
   :after lsp-mode
   :config (progn
             ;;(require 'dap-elixir)
-            (require 'dap-cpptools)
-            (dap-mode t)
-            (dap-ui-mode t)
+            ;;(require 'dap-cpptools)
+            (dap-mode 1)
+	    (dap-ui-mode 1)
+	    (dap-tooltip-mode 1)
+	    (tooltip-mode 1)
             (dap-ui-controls-mode 1)
-            (dap-tooltip-mode 1)
-            (tooltip-mode 1)
+
+            ;; C debugging
+            (require 'dap-gdb)
             
             ;; Rust debugging
-            (require 'dap-lldb)
-            (require 'dap-gdb-lldb)
-            (dap-gdb-lldb-setup)
-            (dap-register-debug-template
-	     "Rust::LLDB Run Configuration"
-	     (list :type "lldb"
-		   :request "launch"
-		   :name "LLDB::Run"
-		   :gdbpath "rust-lldb"
-		   :target nil
-		   :cwd nil))))
+            ;; (require 'dap-lldb)
+            ;; (require 'dap-gdb-lldb)
+            ;; (dap-gdb-lldb-setup)
+            ;; (dap-register-debug-template
+	    ;;  "Rust::LLDB Run Configuration"
+	    ;;  (list :type "lldb"
+	    ;;        :request "launch"
+	    ;;        :name "LLDB::Run"
+	    ;;        :gdbpath "rust-lldb"
+	    ;;        :target nil
+	    ;;        :cwd nil)))
+  ))
+#+end_src
+
+** PSX configuration
+
+#+begin_src emacs-lisp
+(dap-register-debug-template
+ "PSX::Debug"
+ (list :type "gdbserver"
+       :request "attach"
+       :gdb-path "/usr/bin/gdb-multiarch"
+       :target ":3333"
+       :name "PSX::Debug"
+       :executable "${workspaceFolder}/build/${workspaceFolderName}.elf"
+       :cwd "${workspaceFolder}"
+       :valuesFormatting "parseText"
+       :stopAtConnect t))
 #+end_src
 
 * Miscellaneous
@@ -3419,6 +3702,7 @@ I also like Neotree on the F8 key.
 (use-package all-the-icons)
 (use-package neotree
 ;;  :defer nil
+  :after projectile
   :requires all-the-icons
   :config (progn
             (global-set-key [f8] 'neotree-toggle)
@@ -3934,6 +4218,15 @@ and Gitlab, providing support for pull requests and other stuff.
 (use-package forge
   :defer t
   :after magit)
+#+end_src
+
+** Deadgrep
+
+Please install ripgrep 0.8 or newer.
+
+#+begin_src emacs-lisp
+(use-package deadgrep
+  :config (global-set-key (kbd "<f5>") #'deadgrep))
 #+end_src
 
 ** COMMENT Ivy-Spotify
@@ -4546,6 +4839,27 @@ Don't forget to ~M-x copilot-login~! Also use ~M-x copilot-diagnose~.
   :config (fset 'k8s 'kubernetes-overview))
 #+end_src
 
+** Restclient.el
+
+#+begin_src emacs-lisp
+(use-package restclient)
+#+end_src
+
+** Terraform
+
+Add support for Terraform.
+
+#+begin_src emacs-lisp
+(use-package terraform-mode)
+#+end_src
+
+** Elcord
+
+#+begin_src emacs-lisp :tangle no
+(use-package elcord
+  :config (elcord-mode))
+#+end_src
+
 * COMMENT Decrease GC Threshold
 
 Returns GC threshold to normal to make GC pauses faster again.
@@ -4554,5 +4868,19 @@ Returns GC threshold to normal to make GC pauses faster again.
 (setq gc-cons-threshold (* 8 1000 1000)) ; 800 KiB
 #+end_src
 
+* Window shortcuts for terminal
 
+These  shortcuts  put  shrinking/enlarging  windows vertically  on  default  C-x
+brackets, and horizontal shortcuts on C-x M-brackets.
 
+- ~C-x }~: Enlarge window
+- ~C-x {~: Shrink window
+- ~C-x M-}~: Enlarge window horizontally
+- ~C-x M-{~: Shring window horizontally
+
+#+begin_src emacs-lisp
+(global-set-key (kbd "C-x }") 'enlarge-window)
+(global-set-key (kbd "C-x {") 'shrink-window)
+(global-set-key (kbd "C-x M-}") 'enlarge-window-horizontally)
+(global-set-key (kbd "C-x M-{") 'shrink-window-horizontally)
+#+end_src
